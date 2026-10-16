@@ -38,6 +38,6 @@ export function LoginScreen({ navigation }: NativeStackScreenProps<AuthStackPara
       <Button title="Masuk" onPress={() => login()} />
       <Button title="Belum punya akun? Daftar" variant="ghost" onPress={() => navigation.navigate('Register')} />
     </View>
-    <Text style={ui.muted}>Data tersimpan selama aplikasi berjalan dan kembali ke awal setelah restart atau reload penuh.</Text>
+    <Text style={ui.muted}>Pengajuan laundry tersimpan di perangkat ini meskipun aplikasi dibuka ulang. Gunakan akun demo yang sama setelah refresh. Akun registrasi sementara dan sesi login tidak disimpan.</Text>
   </Screen>;
 }

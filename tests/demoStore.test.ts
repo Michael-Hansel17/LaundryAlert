@@ -146,7 +146,7 @@ test('subscription mengabarkan perubahan dan dapat dihentikan', () => {
   assert.equal(calls, 3);
 });
 
-test('restart mengembalikan seed tanpa pengajuan atau akun sesi sebelumnya', () => {
+test('store unit tanpa adapter storage hanya memakai memori; aplikasi memakai DemoStore.open', () => {
   const store = makeStore(); resident(store); const order = store.submit('1', '');
   const restarted = makeStore(); resident(restarted);
   assert.ok(!restarted.visibleOrders().some((o) => o.id === order.id));

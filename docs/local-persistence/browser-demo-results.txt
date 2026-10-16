@@ -1,0 +1,6 @@
+Demo browser Edge / 2026-10-09T02:04:51.743Z
+CREATE: LA-1791511487742-1, 1.25 kg, tersimpan di localStorage melalui AsyncStorage.
+READ + REFRESH: order yang sama terlihat setelah refresh dan login kembali.
+UPDATE + BROWSER REOPEN: 2 kg dan catatan baru tetap tersedia setelah context/browser ditutup lalu dibuka dari profil disk yang sama.
+DELETE + REFRESH: order dihapus, tidak muncul kembali sesudah refresh; jumlah order kembali ke baseline.
+PASS CRUD + refresh + browser reopen

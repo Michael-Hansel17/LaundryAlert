@@ -1,0 +1,55 @@
+
+> laundryalert@1.0.0 test
+> npm run test:logic && npm run test:ui
+
+
+> laundryalert@1.0.0 test:logic
+> tsx --test tests/*.test.ts
+
+✔ admin repository: gagal muat sekali lalu retry berhasil (47.8552ms)
+✔ admin controller: double tap menulis sekali, subscription memperbarui antrean (28.7042ms)
+✔ admin repository: gagal simpan tidak menulis, retry mengubah status satu kali (29.4353ms)
+✔ admin controller: keluar halaman membatalkan pending submit tanpa menulis (21.7683ms)
+✔ admin repository: logout saat pending menolak penulisan sesi lama (14.3218ms)
+✔ admin repository: status berubah selama pending ditolak saat commit (15.3789ms)
+✔ admin repository: akses penghuni dan status melompat ditolak (15.0059ms)
+✔ admin repository: order hilang dan abort tidak mengubah data (21.501ms)
+✔ berat menerima koma/titik dan menolak angka tidak valid (1.9467ms)
+✔ kuota seed hanya menghitung pemilik dan bulan pengajuan (27.0183ms)
+✔ batas kuota tepat diterima, kelebihan ditolak tanpa mengubah data (6.115ms)
+✔ perhitungan desimal tidak menolak batas kuota karena galat floating point (2.3751ms)
+✔ bulan menggunakan WIB, kuota berubah saat pergantian bulan (2.5597ms)
+✔ demo end-to-end mempertahankan data, progres dan pemberitahuan setelah logout (1.7831ms)
+✔ status tidak dapat melompat, mundur, diulang, atau maju setelah diambil (0.9542ms)
+✔ tindakan admin/penghuni dibatasi sesi dan order hilang ditangani (0.5394ms)
+✔ registrasi akun sementara bisa login lagi, email dinormalisasi, kuota awal 10 kg (1.1973ms)
+✔ registrasi menolak input kosong, email salah, sandi pendek dan konfirmasi salah (1.1293ms)
+✔ login salah tidak membuat sesi dan pemberitahuan milik pengguna lain tidak dapat ditutup (0.3733ms)
+✔ subscription mengabarkan perubahan dan dapat dihentikan (0.7834ms)
+✔ restart mengembalikan seed tanpa pengajuan atau akun sesi sebelumnya (1.2705ms)
+✔ repository async: kegagalan muat sekali dapat retry tanpa menghapus data (36.1828ms)
+✔ controller: double tap menulis hanya satu order dan memperbarui kuota/daftar (26.2807ms)
+✔ repository gagal submit tidak menulis/mengurangi kuota dan retry menulis sekali (20.6521ms)
+✔ keluar halaman saat submit membatalkan request sebelum commit (15.5338ms)
+✔ logout saat submit tidak dapat menulis data menggunakan sesi pengguna baru (7.4105ms)
+✔ kuota diperiksa ulang saat commit, bukan hanya ketika data dimuat (27.914ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 426.7447
+
+> laundryalert@1.0.0 test:ui
+> jest --runInBand
+
+PASS tests/ui/adminStatus.test.tsx
+PASS tests/ui/laundrySubmission.test.tsx
+
+Test Suites: 2 passed, 2 total
+Tests:       26 passed, 26 total
+Snapshots:   0 total
+Time:        6.741 s
+Ran all test suites.

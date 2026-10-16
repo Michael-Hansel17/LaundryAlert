@@ -1,0 +1,35 @@
+Verifikasi 9 Oktober 2026 (Asia/Jakarta)
+
+npm run typecheck
+PASS TypeScript (tsc --noEmit)
+
+npm test
+Logic/domain/repository/persistence: 33 passed, 0 failed
+UI: 4 suites passed, 32 tests passed, 0 failed
+Total: 65 tests passed
+
+Tes UI:
+PASS tests/ui/localHydration.test.tsx
+PASS tests/ui/laundryCrud.test.tsx
+PASS tests/ui/adminStatus.test.tsx
+PASS tests/ui/laundrySubmission.test.tsx
+
+Tes persistence baru:
+PASS CRUD memakai file disk: create/read/update/delete bertahan pada instance baru
+PASS gagal create/update/delete tidak mengubah UI atau disk; retry create hanya satu order
+PASS storage rusak, versi asing, model tidak valid tidak ditimpa seed; read error diteruskan
+PASS empty yang tersimpan tidak diisi seed lagi; IDs tetap unik sesudah reopen
+PASS validasi edit/hapus: kuota, pemilik, status dan order hilang
+PASS write queue tidak kehilangan dua pengajuan dan memeriksa kuota saat commit
+
+Browser demo:
+PASS CREATE, READ + REFRESH, UPDATE + BROWSER REOPEN, DELETE + REFRESH
+Detail hasil aktual: browser-demo-results.txt
+
+Bundling:
+PASS expo export --platform all --no-bytecode --output-dir tmp/persistence-export-js
+Web: 547 modules, iOS: 888 modules, Android: 883 modules
+Export default dengan bytecode gagal pada compiler Hermes: spawn UNKNOWN (Windows).
+Bundle JS tanpa bytecode tidak membuktikan build native produksi atau runtime HP/emulator.
+
+Catatan: ringkasan output yang diamati dari eksekusi nyata, bukan laporan uji HP/emulator.

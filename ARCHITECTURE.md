@@ -6,8 +6,9 @@ Prototype memakai **Expo SDK 57 + React Native + TypeScript strict**, **React Na
 
 | Kategori | Yang tersedia |
 |---|---|
-| Sudah dibuat | Delapan halaman, routing berdasarkan sesi/peran, form dengan enam kondisi UI, controller/notifier, repository asinkron, komponen reusable, tema, filter antrean, detail/timeline, tes logika dan komponen |
-| Disimulasikan | Credential akun, registrasi sementara, order dan kuota dalam memori, pembaruan status langsung pada satu proses, pemberitahuan selesai dalam dashboard |
+| Sudah dibuat | Delapan halaman, routing berdasarkan sesi/peran, dua fitur dengan enam kondisi UI masing-masing, controller/notifier, repository asinkron, komponen reusable, tema, filter antrean, detail/timeline, tes logika dan komponen |
+| Local Data & Persistence | CRUD pengajuan, model JSON berversi, AsyncStorage, hydration sebelum navigator, commit disk sebelum publish UI, tes disk dan demo refresh/buka ulang browser; lihat `docs/local-persistence/README.md` |
+| Disimulasikan | Credential akun, registrasi sementara, jeda/error request, pemberitahuan selesai dalam dashboard |
 | Direncanakan | Firebase Authentication, Firestore/onSnapshot, aturan akses backend, timestamp Firestore, Expo/FCM untuk push/background |
 
 ## Struktur nyata
@@ -21,6 +22,7 @@ LaundryAlert/
 ├── assets/                       # Aset bawaan template Expo
 ├── docs/prototype-demo.jpg        # Bukti tampilan browser dari skenario demo
 ├── docs/state-management/         # Screenshot enam kondisi fitur pengajuan
+├── docs/admin-state-management/   # Enam kondisi admin dan bukti tambahan
 ├── jest.config.js                 # Jest Expo + tes komponen RN
 ├── src/
 │   ├── config/constants.ts        # Kuota, timezone, akun demo
@@ -37,9 +39,11 @@ LaundryAlert/
 │   │   │   ├── hooks/            # useLaundry.ts, useLaundrySubmission.ts
 │   │   │   └── presentation/     # Dashboard, SubmitLaundryScreen/View, Detail, History
 │   │   └── admin/
-│   │       ├── domain/models.ts  # AdminQueueFilter
-│   │       ├── hooks/useAdminQueue.ts
-│   │       └── presentation/    # AdminDashboard, AdminDetail
+│   │       ├── domain/          # models.ts, adminRepository.ts
+│   │       ├── data/demoAdminRepository.ts
+│   │       ├── state/AdminStatusController.ts
+│   │       ├── hooks/useAdminStatus.ts
+│   │       └── presentation/    # AdminDashboard, AdminDetail, AdminStatusView
 │   ├── shared/
 │   │   ├── components/          # Button, Input, LaundryCard, StatusBadge,
 │   │   │                        # QuotaCard, EmptyState, Screen, OrderDetails
@@ -48,11 +52,11 @@ LaundryAlert/
 │   │   └── utils/format.ts
 │   └── navigation/              # Root, Auth, Resident, Admin navigator,
 │                                # LogoutButton, types.ts
-└── tests/                        # demoStore.test.ts, laundryRepository.test.ts,
-                                 # ui/laundrySubmission.test.tsx
+└── tests/                        # demoStore.test.ts, laundryRepository.test.ts, adminRepository.test.ts,
+                                 # ui/laundrySubmission.test.tsx, ui/adminStatus.test.tsx
 ```
 
-Admin memakai layanan laundry yang sama melalui hooks; tidak memiliki repository atau salinan order sendiri. Folder `data/` admin tidak dibuat karena tidak ada sumber data admin yang terpisah. Tidak ada `firebase.ts` atau folder notifikasi kosong.
+Admin memiliki DemoAdminRepository asinkron yang memakai DemoStore yang sama dengan penghuni. Controller menyimpan snapshot UI, filter, pilihan form dan status request. Satu `LocalLaundryStorage` menyimpan snapshot order ke AsyncStorage. Tidak ada `firebase.ts` atau folder notifikasi kosong.
 
 ## Routing dan halaman
 
@@ -116,6 +120,8 @@ sequenceDiagram
     participant UI as React Navigation / Halaman
     participant Controller as LaundrySubmissionController
     participant Repo as DemoLaundryRepository
+    participant AdminController as AdminStatusController
+    participant AdminRepo as DemoAdminRepository
     participant Store as DemoStore dalam memori
     actor Admin
     Penghuni->>UI: Ajukan berat dan catatan
@@ -128,26 +134,41 @@ sequenceDiagram
     Controller-->>UI: success / error dengan retry
     Penghuni->>UI: Logout
     Admin->>UI: Login demo admin
-    UI->>Store: updateStatus → diproses → selesai
+    UI->>AdminController: Pilih status dan submit
+    AdminController->>AdminController: Validasi + guard → submitting
+    AdminController->>AdminRepo: update(input, signal)
+    AdminRepo->>Store: Setelah jeda → cek sesi/status → updateStatus
     Store->>Store: Tambah riwayat dan pemberitahuan pemilik
+    AdminRepo-->>AdminController: Order terbaru / error
+    AdminController-->>UI: success / error dengan retry
     Admin->>UI: Logout
     Penghuni->>UI: Login kembali
     Store-->>UI: Order terkini + pemberitahuan selesai
 ```
 
-Perangkat berbeda tidak tersinkron. Pemberitahuan bukan push dan tidak berjalan saat aplikasi ditutup. Restart/reload penuh mengembalikan seed. Pergantian bulan diperiksa ketika hook/operasi menghitung kuota kembali, tanpa timer latar belakang.
+Perangkat berbeda tidak tersinkron. Pemberitahuan bukan push dan tidak berjalan saat aplikasi ditutup. Restart/reload penuh memuat order lokal terakhir dari AsyncStorage; seed hanya dibuat saat key belum ada. Akun registrasi dan sesi masih sementara. Pergantian bulan diperiksa ketika hook/operasi menghitung kuota kembali, tanpa timer latar belakang.
 
 ## Komponen dan verifikasi
 
 Theme mengatur warna, typography, spacing dan radius. Button, Input, LaundryCard, StatusBadge, QuotaCard dan EmptyState dipakai pada halaman relevan; Screen menangani scrolling, safe area serta keyboard. OrderDetails berbagi ringkasan/timeline antara admin dan penghuni. Tampilan memakai bahasa Indonesia, tema terang, dan tombol minimal 44–48 px.
 
-Pemeriksaan: TypeScript, 19 tes domain/store/repository dengan Node test runner + tsx, 13 tes komponen dengan Jest Expo + React Native Testing Library, `expo install --check`, Expo Doctor, dan ekspor Android/iOS/web. Tes komponen merupakan padanan widget test pada React Native: render view nyata, ubah input, tekan tombol, dan periksa spinner/pesan/disabled serta jumlah request. Promise terkontrol menjaga pemeriksaan state pending tetap deterministik. Tes meliputi keenam kondisi wajib, retry, enam kasus validasi, guard double tap, sukses/reset/detail, dan gagal submit dengan input tetap tersedia. Tes repository nyata meliputi subscription kuota, pembatalan, sesi berubah, dan kuota yang berubah selama request.
+Pemeriksaan: TypeScript, 27 tes domain/store/repository dengan Node test runner + tsx, 26 tes komponen dengan Jest Expo + React Native Testing Library, `expo install --check`, Expo Doctor, dan ekspor Android/iOS/web. Tes komponen merupakan padanan widget test pada React Native: render view nyata, ubah input, tekan tombol, dan periksa spinner/pesan/disabled serta jumlah request. Promise terkontrol menjaga pemeriksaan state pending tetap deterministik. Tes meliputi keenam kondisi wajib, retry, enam kasus validasi, guard double tap, sukses/reset/detail, dan gagal submit dengan input tetap tersedia. Tes repository nyata meliputi subscription kuota, pembatalan, sesi berubah, dan kuota yang berubah selama request.
 
-Seluruh 32 tes lulus. Enam screenshot browser ada di `docs/state-management/` dan ditampilkan beserta panduan reproduksi pada README. Pengujian browser tambahan memeriksa pemulihan retry, kuota setelah submit, dan akun baru tanpa order. HP/emulator belum diuji; ekspor bundle bukan pengganti uji perangkat.
+Seluruh 53 tes lulus. Bukti enam kondisi setiap fitur ada di `docs/state-management/` dan `docs/admin-state-management/`, beserta panduan reproduksi pada README. Pengujian browser memeriksa pemulihan retry, kuota setelah submit, akun baru tanpa order, perubahan status admin, hasil filter kosong, dan pemberitahuan penghuni. TypeScript dan tes telah diperiksa kembali untuk fitur admin; Expo Doctor dan ekspor native di atas berasal dari pemeriksaan sebelumnya. HP/emulator belum diuji; ekspor bundle bukan pengganti uji perangkat.
+
+## Pemisahan fitur Kelola Status Admin
+
+`AdminDashboardScreen / AdminDetailScreen → useAdminStatus → AdminStatusController → AdminRepository → DemoAdminRepository → DemoStore`.
+
+AdminStatusView membaca snapshot controller melalui useSyncExternalStore. Controller memiliki loadStatus, orders, filter, orderId, target, validationError, submitStatus, dan submitError. Empty state berasal dari koleksi/hasil filter yang kosong atau ID detail yang tidak ditemukan. Form memvalidasi pilihan wajib dan transisi satu tahap sebelum repository dipanggil. Guard pending bersifat sinkron; sukses menghapus pilihan dan memblokir pengiriman ulang sampai pengguna memilih tahap baru.
+
+Load memakai AbortController dan version agar respons request lama tidak mengganti state terbaru. Submit dibatalkan saat halaman dilepas. Repository mengecek sesi admin, melakukan jeda simulasi, mengecek sesi dan expectedStatus kembali, lalu memanggil aturan domain melalui DemoStore.updateStatus. Status yang berubah selama request ditolak, sehingga request lama tidak menambah timeline atau pemberitahuan kedua. Queue yang masih terpasang ikut berubah melalui subscription.
+
+Penggantian dengan Firebase harus memindahkan pemeriksaan status/role serta commit ke transaksi dan aturan akses backend. Jeda dan failNextLoad/failNextUpdate hanya untuk demonstrasi. Detail tes, bukti enam kondisi, langkah demo dan catatan AI/review pribadi terdapat pada bagian fitur kedua di README.
 
 ## Tahap integrasi Firebase
 
-Ganti credential `authService`/operasi sesi dengan Firebase Authentication; implementasikan kontrak `LaundryRepository` dengan Firestore dan subscription `onSnapshot` untuk form. Controller dan view dapat tetap dipakai. Dashboard/admin dan operasi status juga perlu dimigrasikan dari DemoStore ke sumber backend yang sama; mengganti repository form saja belum memigrasikan seluruh aplikasi. Timestamp ISO dipetakan dari/ke Firestore Timestamp. Validasi kuota harus dipindahkan ke transaksi/layanan backend agar aman terhadap pengajuan serentak. Simulasi jeda/kegagalan development dihapus pada repository produksi.
+Ganti credential `authService`/operasi sesi dengan Firebase Authentication; implementasikan kontrak `LaundryRepository` dengan Firestore dan subscription `onSnapshot` untuk form. Controller dan view dapat tetap dipakai. DemoAdminRepository dan dashboard penghuni juga perlu dimigrasikan dari DemoStore ke sumber backend yang sama; mengganti repository form saja belum memigrasikan seluruh aplikasi. Timestamp ISO dipetakan dari/ke Firestore Timestamp. Validasi kuota harus dipindahkan ke transaksi/layanan backend agar aman terhadap pengajuan serentak. Simulasi jeda/kegagalan development dihapus pada repository produksi.
 
 Role admin ditetapkan oleh pengelola/backend, bukan pilihan saat registrasi. Firestore Security Rules membatasi data penghuni menurut UID dan perubahan status menurut role; validasi pada UI tidak cukup. Notifikasi produksi memerlukan token perangkat, layanan pengirim tepercaya, konfigurasi Expo/FCM, dan deduplikasi event selesai.
 

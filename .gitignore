@@ -41,3 +41,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Temporary artifact builders and rendered QA pages
+/tmp/

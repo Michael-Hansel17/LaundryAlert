@@ -1,13 +1,21 @@
 # LaundryAlert — Prototype Mobile
 
-Prototype tugas kuliah dengan **React Native, Expo SDK 57, TypeScript, dan React Navigation**. Delapan halaman tersedia dan memakai satu penyimpanan simulasi dalam memori. Firebase belum dihubungkan.
+Dokumen untuk reviewer: posisi kode, demo, dan hasil tes Local Data & Persistence ada di [docs/local-persistence/README.md](docs/local-persistence/README.md).
+
+Prototype tugas kuliah dengan **React Native, Expo SDK 57, TypeScript, dan React Navigation**. Delapan halaman tersedia. Pengajuan laundry kini disimpan lokal dengan **AsyncStorage** dan tetap tersedia setelah refresh atau aplikasi dibuka ulang. Firebase belum dihubungkan.
+
+## Tugas Local Data & Persistence — selesai diimplementasikan
+
+Satu fitur vertikal **Pengajuan Laundry** sudah memiliki Create, Read, Update, Delete dan persistence. Reviewer dapat mulai dari [posisi kode dan demo singkat](docs/local-persistence/README.md), [adapter storage](src/features/laundry/data/localLaundryStorage.ts), dan [use case CRUD](src/features/laundry/data/demoStore.ts). Create melalui form pengajuan, Read melalui riwayat/detail, Edit/Hapus melalui detail order berstatus Diterima.
+
+Verifikasi 9 Oktober 2026: TypeScript lulus, **33 tes logika/persistence + 32 tes UI lulus**, demo browser create → refresh → edit → tutup/buka browser → delete → refresh lulus. [Hasil demo](docs/local-persistence/browser-demo-results.txt) dan enam screenshot tersedia. Uji tutup/buka pada HP/emulator belum dilakukan. Gunakan akun demo yang sama setelah restart; akun registrasi sementara dan sesi login tetap tidak dipersist.
 
 ## Status implementasi
 
 | Status | Fitur |
 |---|---|
 | Sudah dibuat | Login, registrasi, dashboard penghuni, pengajuan, detail/progres, riwayat, antrean admin/filter, pembaruan status, logout, komponen dan tema bersama |
-| Masih disimulasikan | Autentikasi, akun sementara, data laundry bersama dalam satu aplikasi, kuota 10 kg, pemberitahuan saat selesai |
+| Masih disimulasikan | Autentikasi, akun sementara, akun dan sesi login (data laundry sudah dipersist lokal), kuota 10 kg, pemberitahuan saat selesai |
 | Tahap integrasi Firebase | Firebase Authentication, Firestore dan sinkronisasi antarperangkat, aturan akses server, notifikasi push melalui Expo/FCM |
 
 ## Menjalankan di Windows
@@ -61,11 +69,11 @@ Registrasi membuat akun **penghuni sementara**, lalu langsung masuk. Isi nama, e
 1. Masuk demo penghuni. Dashboard menampilkan 2 laundry aktif dan sisa kuota **6,5 kg** pada seed awal.
 2. Tutup pemberitahuan seed jika diperlukan. Tekan **Ajukan laundry** dan tunggu data dimuat. Isi berat `2,5` dan catatan opsional, lalu kirim. Tombol dan form terkunci selama proses. Setelah pesan berhasil, tekan **Lihat detail laundry**. Detail baru berstatus **Diterima**; sisa kuota menjadi **4 kg**.
 3. Kembali ke Beranda dan tekan **Keluar**. Masuk demo admin, lalu buka pengajuan terbaru milik Alya. Coba filter Diterima pada antrean.
-4. Tekan **Ubah menjadi Diproses**, kemudian **Ubah menjadi Selesai**. Pesan admin mengonfirmasi pembuatan pemberitahuan simulasi.
+4. Pilih **Diproses**, tekan **Simpan status**, dan tunggu konfirmasi. Lalu pilih **Selesai** dan simpan kembali. Pesan admin mengonfirmasi pembuatan pemberitahuan simulasi.
 5. Kembali ke antrean, **Keluar**, lalu masuk demo penghuni lagi. Dashboard memperlihatkan laundry **Selesai**, kuota tetap 4 kg, dan pemberitahuan **Cucian siap diambil**. Buka detail dari pemberitahuan atau kartu laundry.
-6. Jika ingin menyelesaikan alur, masuk admin kembali dan ubah ke **Sudah diambil**. Pada penghuni, order keluar dari daftar aktif tetapi tetap ada di Riwayat. Kuota tidak dikembalikan.
+6. Jika ingin menyelesaikan alur, masuk admin kembali dan pilih **Sudah diambil** dan tekan **Simpan status**. Pada penghuni, order keluar dari daftar aktif tetapi tetap ada di Riwayat. Kuota tidak dikembalikan.
 
-Gunakan proses aplikasi yang sama dan jangan reload/restart di antara langkah. Dua HP, dua tab browser, atau dua proses aplikasi memiliki penyimpanan terpisah.
+Order kini tetap tersedia setelah reload/restart pada perangkat atau origin/profil browser yang sama. Login kembali dengan akun demo yang sama. Perangkat berbeda tidak tersinkron. Dua tab pada origin yang sama berbagi storage disk tetapi snapshot tab yang sedang terbuka tidak disinkronkan otomatis.
 
 ## Fitur tugas: Pengajuan Laundry dengan enam kondisi UI
 
@@ -117,7 +125,7 @@ Bukti tambahan: [gagal submit dengan input tetap tersedia](./docs/state-manageme
 
 ## Batasan prototype
 
-**Seluruh data hanya berada dalam memori.** Restart proses atau reload penuh mengembalikan akun, order, dan pemberitahuan ke seed. Fast Refresh saat pengembangan tidak menjamin reset; lakukan reload penuh untuk mengulang demo dari awal.
+**Order laundry tersimpan di AsyncStorage.** Restart/reload memuat order terakhir, termasuk hasil edit/delete dan status admin. Seed hanya dibuat ketika key penyimpanan belum ada. Credential registrasi sementara dan sesi login tetap berada dalam memori. Pemberitahuan selesai dibentuk kembali dari order saat startup. Menghapus data aplikasi/browser menghapus penyimpanan lokal.
 
 Pembaruan langsung terlihat di layar karena kedua peran memakai penyimpanan yang sama. Belum ada Firebase Auth, Firestore, sinkronisasi antarperangkat, maupun keamanan backend. Pembatasan peran/akses pada aplikasi hanya membantu konsistensi simulasi dan bukan pengganti autentikasi serta Firestore Security Rules.
 
@@ -137,16 +145,18 @@ npx expo-doctor
 npx expo export --platform android --platform ios --platform web
 ```
 
-`npm test` menjalankan 19 tes logika/domain/repository serta 13 tes komponen melalui Jest Expo dan React Native Testing Library. Tes UI memakai komponen dan controller sebenarnya, dengan repository terkontrol agar pending/sukses/error dapat diperiksa secara deterministik. Enam kondisi wajib diuji, termasuk enam kasus input invalid, retry, input disabled, guard double tap, konfirmasi sukses, membuka detail, dan reset form. Tes repository menggunakan penyimpanan nyata dalam memori untuk memeriksa pembaruan kuota, kegagalan tanpa penulisan, pembatalan, perubahan sesi, serta pemeriksaan ulang kuota sebelum commit. Tes domain sebelumnya tetap memeriksa registrasi, pergantian bulan WIB, isolasi penghuni, peran, status, pemberitahuan, dan logout/login.
+`npm test` kini menjalankan **33 tes logika/domain/repository/persistence dan 32 tes UI** melalui Jest Expo dan React Native Testing Library. Tes UI memakai komponen dan controller sebenarnya, dengan repository terkontrol agar pending/sukses/error dapat diperiksa secara deterministik. Enam kondisi wajib diuji, termasuk input invalid, retry, input disabled, guard double tap, konfirmasi sukses, membuka detail, dan reset form. Tes persistence memakai file disk dan instance store baru untuk CRUD lintas reopen, ditambah kegagalan baca/tulis, model/versi rusak, empty tersimpan, ID unik, validasi akses/kuota dan antrean write. Tes baru juga memeriksa form edit, konfirmasi delete, serta loading/error/retry hydration. Tes domain sebelumnya tetap memeriksa registrasi, pergantian bulan WIB, isolasi penghuni, peran, status, pemberitahuan, dan logout/login.
 
-File tes: [tests/ui/laundrySubmission.test.tsx](./tests/ui/laundrySubmission.test.tsx), [tests/laundryRepository.test.ts](./tests/laundryRepository.test.ts), dan [tests/demoStore.test.ts](./tests/demoStore.test.ts). Perintah coverage opsional menghasilkan laporan di `coverage/`; hasil lulus di bawah berasal dari `npm test`, bukan klaim persentase coverage. Ekspor menghasilkan bundle ke `dist/`; ini bukan APK dan bukan pengujian perangkat. Folder hasil build dan dependensi diabaikan Git.
+File tes: [UI pengajuan](./tests/ui/laundrySubmission.test.tsx), [UI admin](./tests/ui/adminStatus.test.tsx), [repository pengajuan](./tests/laundryRepository.test.ts), [repository admin](./tests/adminRepository.test.ts), dan [domain/store](./tests/demoStore.test.ts). Perintah coverage opsional menghasilkan laporan di `coverage/`; hasil lulus di bawah berasal dari `npm test`, bukan klaim persentase coverage. Ekspor menghasilkan bundle ke `dist/`; ini bukan APK dan bukan pengujian perangkat. Folder hasil build dan dependensi diabaikan Git.
 
 ### Hasil verifikasi — 2 Oktober 2026
+
+TypeScript dan tes diperiksa kembali setelah fitur admin ditambahkan. Expo Doctor, audit dependensi, ekspor native, dan pengujian viewport 390 × 844 di bawah berasal dari pemeriksaan prototype sebelumnya; belum diulang untuk perubahan admin ini.
 
 | Pemeriksaan | Hasil |
 |---|---|
 | `npm run typecheck` | Lulus, tanpa kesalahan TypeScript |
-| `npm test` | 32 tes lulus: 19 logika/repository + 13 komponen/widget |
+| `npm test` | 65 tes lulus: 33 logika/repository/persistence + 32 komponen/widget |
 | `expo install --check` | Dependensi sesuai SDK |
 | Expo Doctor | 21/21 pemeriksaan lulus |
 | Ekspor Android/iOS/web | Berhasil; bundle native dikompilasi dengan Hermes |
@@ -231,3 +241,70 @@ Selain itu, tidak ada sistem yang mencatat sisa kuota laundry (misalnya sisa dar
 - Sistem kuota bulanan (10 kg) **terhitung otomatis dan akurat** berdasarkan input berat laundry.
 - Admin/petugas dapat mengubah status laundry dengan mudah melalui dashboard, minimal untuk 4 tahap status.
 - Aplikasi dapat diuji coba (demo) end-to-end: dari input laundry → update status oleh admin → notifikasi diterima penghuni.
+
+
+## Fitur tugas kedua: Kelola Status Laundry untuk Admin
+
+Fitur Pengajuan Laundry dan Kelola Status Laundry sama-sama menggunakan React Context + external store/controller (`useSyncExternalStore`). Tidak ada kewajiban Flutter pada tugas ini; tes komponen React Native menjadi padanan widget test.
+
+- UI: `src/features/admin/presentation/AdminStatusView.tsx`, dipakai oleh halaman antrean dan detail.
+- Notifier/use case: `src/features/admin/state/AdminStatusController.ts`, menangani load, filter, pilihan status, validasi, retry, sukses, pembatalan, dan guard double tap.
+- Kontrak repository: `src/features/admin/domain/adminRepository.ts`.
+- Repository simulasi: `src/features/admin/data/demoAdminRepository.ts`, operasi asinkron dengan jeda 1,5 detik dan subscription ke DemoStore bersama. Sesi/peran dan status awal diperiksa ulang sebelum commit. Transisi harus maju tepat satu tahap.
+
+| Kondisi wajib | Perilaku | Bukti browser |
+|---|---|---|
+| Initial loading | Spinner sebelum antrean/form dapat digunakan | [01-initial-loading.png](docs/admin-state-management/01-initial-loading.png) |
+| Data berhasil dimuat | Daftar order, filter, detail dan form pilihan status | [02-loaded.png](docs/admin-state-management/02-loaded.png) |
+| Empty state | Pesan Tidak ada pengajuan ketika hasil filter kosong | [03-empty.png](docs/admin-state-management/03-empty.png) |
+| Error + retry | Pesan gagal muat; Coba lagi menjalankan request baru | [04-load-error.png](docs/admin-state-management/04-load-error.png) |
+| Validasi form | Pilihan kosong, status tetap/mundur/lompatan ditolak sebelum request | [05-validation.png](docs/admin-state-management/05-validation.png) |
+| Submit loading | Spinner, pilihan radio/tombol dikunci; controller mencegah request ganda | [06-submitting.png](docs/admin-state-management/06-submitting.png) |
+
+Bukti tambahan: [gagal simpan dengan pilihan tetap tersedia](docs/admin-state-management/07-submit-error.png), [retry berhasil](docs/admin-state-management/08-submit-success.png), dan [pemberitahuan pada penghuni](docs/admin-state-management/09-resident-notice.png). Screenshot berasal dari browser pada 2 Oktober 2026, bukan HP/emulator. Empty state merupakan hasil filter yang benar-benar kosong setelah order Diterima diubah menjadi Diproses, bukan manipulasi tampilan.
+
+### Langkah reproduksi
+
+1. Jalankan `npm run web`. Pada instalasi/profil browser baru, seed awal terdiri dari empat order. Setelah pernah dipakai, reload penuh mempertahankan order lokal terakhir. Masuk demo admin: loading muncul, lalu antrean tampil.
+2. Pada panel development tekan Coba gagal muat admin, tunggu error, lalu Coba lagi. Antrean pulih dari request repository berikutnya.
+3. Buka LA-DEMO-001. Tunggu loading detail, lalu tekan Simpan status tanpa pilihan untuk melihat validasi. Pilih Selesai lalu simpan: lompatan dari Diterima ditolak. Pilih Diproses untuk transisi sah.
+4. Dengan Diproses dipilih, tekan Coba gagal simpan status. Selama pending, pilihan dan tombol dikunci. Setelah error, pilihan tetap tersimpan. Tekan Coba kirim lagi. Status menjadi Diproses sekali, timeline bertambah satu tahap.
+5. Kembali ke antrean, pilih filter Diterima. Hasilnya kosong karena order seed satu-satunya dengan status tersebut sudah berubah.
+6. Pilih Semua, buka LA-DEMO-001, pilih Selesai dan Simpan status. Setelah sukses, kembali, logout, lalu masuk demo penghuni. Order selesai dan pemberitahuan baru terlihat; kuota tidak berubah karena perubahan status.
+7. Untuk tahap berikutnya, pilih status tujuan baru setelah sukses. Laundry berstatus Sudah diambil tidak menampilkan form lagi. Muat ulang membersihkan pilihan/error form. Panel kegagalan tidak muncul pada build produksi.
+
+### Tes dan hasil
+
+- [13 tes UI admin](tests/ui/adminStatus.test.tsx): loading, loaded, empty, filter/navigasi, load error/retry, pilihan kosong, tiga transisi invalid, submit loading/double tap, submit error/retry, order hilang, dan status final.
+- [8 tes repository/controller admin](tests/adminRepository.test.ts): load retry, double tap dengan store nyata, subscription, pemberitahuan selesai sekali, submit retry tanpa penulisan saat gagal, abort, sesi berubah, status berubah selama request, akses penghuni, transisi tidak sah, serta order hilang.
+- Catatan verifikasi 2 Oktober 2026 sebelum persistence: TypeScript lulus, 27/27 tes logika/repository dan 26/26 tes UI, total 53. Verifikasi terkini setelah persistence adalah 33 + 32 = 65 tes lulus, lihat bagian Local Data & Persistence di atas.
+- Output verifikasi akhir: [test-results.txt](docs/admin-state-management/test-results.txt).
+- Saat menyusun tes, fixture status final sempat menunjuk LA-DEMO-003 (Diproses). Fixture diperbaiki menjadi LA-DEMO-004 (Sudah diambil), lalu semua tes UI lulus. Ini koreksi tes oleh Codex.
+- Repository memiliki jeda/error simulasi, tetapi perubahan order kini dipersist ke AsyncStorage. Restart/reload memuat data lokal terakhir. Pembatasan peran aplikasi belum menggantikan keamanan backend.
+
+## Catatan penggunaan AI dan review mahasiswa
+
+### Prompt yang digunakan dalam percakapan ini
+
+Pengguna memberikan tugas berikut dan meminta audit beserta bukti:
+
+> Terapkanlah 2 fitur untuk mengimplementasikan state managemnet.
+> Contohnya: Proses Booking
+>
+> Tugas Anda adalah membuat satu feature Flutter yang menerapkan state management, form, dan validasi secara nyata. Feature wajib memiliki minimal enam kondisi UI: initial loading, data berhasil dimuat, empty state, error state dengan tombol retry, validasi input pada form, serta loading saat proses submit agar pengguna tidak dapat melakukan double tap.
+>
+> Gunakan state management yang konsisten, misalnya Riverpod, dan pisahkan tanggung jawab antara widget, notifier/use case, serta repository. Sertakan widget test untuk setiap state utama dan dokumentasikan hasilnya dengan screenshot atau video singkat. Anda boleh menggunakan Codex atau Gemini untuk membantu membuat boilerplate, test, atau melakukan review kode, tetapi Anda tetap wajib memahami, menjelaskan, dan bertanggung jawab atas kode yang dikumpulkan; cantumkan prompt AI yang digunakan serta bagian kode yang Anda periksa atau perbaiki sendiri.
+
+Klarifikasi pengguna, persis seperti dikirim:
+
+> tidak mewajibkan flutter. apakah bearti langkah selanjutnya adalah membuat fitur kedua? jika ya apa fitur kedua yang kamu sarankan
+
+Codex menyarankan melengkapi fitur Kelola Status Laundry untuk Admin dengan enam kondisi UI, View → Controller → Repository, tes, screenshot, serta dokumentasi prompt dan review. Persetujuan pelaksanaan pengguna:
+
+> kerjakan
+
+Catatan ini merekam prompt yang tersedia dalam percakapan ini; prompt pembuatan kode sebelumnya yang tidak tersedia tidak direkonstruksi sebagai kutipan asli.
+
+### Bagian yang dibuat dan diperiksa oleh Codex
+
+Codex membuat repository/controller/view admin, menyambungkan kedua halaman admin, menambahkan tes, merekam screenshot, serta memperbarui dokumentasi. Pemeriksaan mencakup guard sebelum await, form disabled saat pending, retry yang memanggil repository, kegagalan tanpa commit, abort saat unmount, validasi transisi, pemeriksaan ulang sesi/status, dan data penghuni setelah admin menyelesaikan order. React Context serta DemoStore yang sudah ada dipertahankan agar state management konsisten. Hook useAdminQueue yang tidak dipakai lagi dihapus. Mock subscription tes diperbaiki agar tanda tangan parameternya sesuai kontrak TypeScript; fixture final diperbaiki sesuai seed nyata.
