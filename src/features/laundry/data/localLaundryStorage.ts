@@ -14,7 +14,7 @@ export interface LocalLaundryData {
 export const LAUNDRY_STORAGE_KEY = '@laundryalert/laundry/v1';
 const record = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 const date = (value: unknown) => typeof value === 'string' && Number.isFinite(Date.parse(value));
-function validOrder(value: unknown): value is LaundryOrder {
+export function validOrder(value: unknown): value is LaundryOrder {
   if (!record(value)) return false;
   return ['id', 'userId', 'userName', 'roomNumber', 'notes'].every((key) => typeof value[key] === 'string')
     && !!value.id && !!value.userId

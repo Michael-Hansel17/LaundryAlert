@@ -74,6 +74,13 @@ export class DemoStore {
       return draft.state.orders.find((order) => order.id === orderId)!;
     }, signal);
   }
+  // Backend is the source of truth; this keeps a local copy so Dashboard/History show the new order.
+  mirrorRemoteOrder(order: LaundryOrder) {
+    return this.commit((draft) => {
+      if (draft.state.orders.some((o) => o.id === order.id)) return;
+      draft.publish({ ...draft.state, orders: [order, ...draft.state.orders] });
+    });
+  }
   editPersisted(orderId: string, weightInput: string, notes: string) {
     return this.commit((draft) => {
       const order = draft.editableOrder(orderId);

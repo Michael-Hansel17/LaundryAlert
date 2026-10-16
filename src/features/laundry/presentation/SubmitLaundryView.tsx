@@ -61,7 +61,7 @@ export function SubmitLaundryView({ controller, onOpenOrder, onSimulateLoadError
       {submitting && <Text accessibilityLiveRegion="polite" style={ui.muted}>Sedang mengirim. Tombol dan form dikunci untuk mencegah pengajuan ganda.</Text>}
       {quota.remainingKg === 0 && <Text style={ui.error}>Kuota bulan ini sudah habis. Pengajuan baru tersedia pada bulan berikutnya.</Text>}
     </View>
-    <Text style={ui.muted}>Kuota berkurang setelah pengajuan tersimpan di perangkat. Respons layanan menggunakan jeda simulasi.</Text>
+    <Text style={ui.muted}>Kuota berkurang setelah pengajuan tersimpan di server.</Text>
     {__DEV__ && onSimulateLoadError && onSimulateSubmitError && <View style={ui.card}>
       <Text style={ui.subtitle}>Uji kondisi layanan</Text>
       <Text style={ui.muted}>Panel demonstrasi tugas kuliah. Kegagalan hanya terjadi sekali; percobaan berikutnya kembali normal. Panel tidak tampil pada build produksi.</Text>

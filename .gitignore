@@ -44,3 +44,6 @@ yarn-error.*
 
 # Temporary artifact builders and rendered QA pages
 /tmp/
+
+# local API data
+server/data/

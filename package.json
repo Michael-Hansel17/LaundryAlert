@@ -11,6 +11,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "api": "tsx server/main.ts",
+    "dev": "node scripts/dev.cjs",
     "typecheck": "tsc --noEmit",
     "test": "npm run test:logic && npm run test:ui",
     "test:logic": "tsx --test tests/*.test.ts",

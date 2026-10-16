@@ -1,6 +1,6 @@
 # LaundryAlert — Prototype Mobile
 
-Dokumen untuk reviewer: posisi kode, demo, dan hasil tes Local Data & Persistence ada di [docs/local-persistence/README.md](docs/local-persistence/README.md).
+Dokumen untuk reviewer: Local Data & Persistence di [docs/local-persistence/README.md](docs/local-persistence/README.md); Integrasi API (REST backend + 9 unit test) di [docs/api-integration/README.md](docs/api-integration/README.md). Jalankan semuanya (backend + web) dengan satu perintah: `npm run dev`.
 
 Prototype tugas kuliah dengan **React Native, Expo SDK 57, TypeScript, dan React Navigation**. Delapan halaman tersedia. Pengajuan laundry kini disimpan lokal dengan **AsyncStorage** dan tetap tersedia setelah refresh atau aplikasi dibuka ulang. Firebase belum dihubungkan.
 
