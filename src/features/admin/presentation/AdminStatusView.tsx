@@ -33,7 +33,7 @@ export function AdminStatusView({ controller, onOpenOrder, onSimulateLoadError, 
     <Text style={ui.muted}>Data admin berhasil dimuat · {state.orders.length} pengajuan.</Text>
     {state.orderId ? !order ? <EmptyState title="Laundry tidak ditemukan" message="Kembali ke antrean dan pilih laundry yang tersedia." /> : <>
       <OrderDetails order={order} />
-      {state.submitStatus === 'success' && <Text accessibilityLiveRegion="polite" style={ui.body}>Status berhasil disimpan. {order.status === 'selesai' ? 'Pemberitahuan simulasi tersedia untuk penghuni.' : 'Data penghuni telah diperbarui.'}</Text>}
+      {state.submitStatus === 'success' && <Text accessibilityLiveRegion="polite" style={ui.body}>Status berhasil disimpan. {order.status === 'selesai' ? 'Pemberitahuan tersedia untuk penghuni.' : 'Data penghuni telah diperbarui.'}</Text>}
       {nextStatus(order.status) ? <View style={ui.card}>
         <Text style={ui.subtitle}>Form pembaruan status</Text>
         <Text style={ui.body}>Pilih status tujuan</Text>
@@ -63,7 +63,7 @@ export function AdminStatusView({ controller, onOpenOrder, onSimulateLoadError, 
       {filtered.map((entry) => <LaundryCard key={entry.id} order={entry} showResident onPress={() => onOpenOrder?.(entry.id)} />)}
     </>}
     <Button title="Muat ulang data admin" variant="secondary" disabled={submitting} onPress={() => { void controller.load(); }} />
-    <Text style={ui.muted}>Data dan pemberitahuan masih simulasi dalam aplikasi yang sama. Belum ada push notification.</Text>
+    <Text style={ui.muted}>Status tersimpan di server. Penghuni menerima notifikasi lokal; belum ada push notification.</Text>
     {__DEV__ && <View style={ui.card}>
       <Text style={ui.subtitle}>Uji kondisi layanan admin</Text>
       <Text style={ui.muted}>Simulasi satu kegagalan request berikutnya. Panel hanya tersedia pada development.</Text>

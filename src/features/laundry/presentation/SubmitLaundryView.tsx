@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Text, View } from 'react-native';
 import { Button } from '../../../shared/components/Button';
 import { EmptyState } from '../../../shared/components/EmptyState';
 import { Input } from '../../../shared/components/Input';
@@ -53,6 +53,15 @@ export function SubmitLaundryView({ controller, onOpenOrder, onSimulateLoadError
       <Input label="Estimasi berat (kg)" hint="Contoh: 2,5 atau 2.5. Maksimal 2 angka desimal." value={state.weight} onChangeText={(value) => controller.setWeight(value)} keyboardType="decimal-pad" editable={!submitting && !success} placeholder="Contoh: 2,5" />
       {state.validationError && <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={ui.error}>{state.validationError}</Text>}
       <Input label="Catatan (opsional)" value={state.notes} onChangeText={(value) => controller.setNotes(value)} multiline editable={!submitting && !success} placeholder="Contoh: Jaket dicuci dengan hati-hati" />
+      <View style={ui.section}>
+        <Text style={ui.subtitle}>Foto cucian (opsional)</Text>
+        <Text style={ui.muted}>Foto kondisi pakaian saat diantar membantu petugas dan menghindari selisih saat pengambilan.</Text>
+        {state.photo && <Image source={{ uri: state.photo }} accessibilityLabel="Pratinjau foto cucian" style={{ width: '100%', height: 180, borderRadius: 8 }} resizeMode="cover" />}
+        <Button title={state.photo ? 'Ganti dengan kamera' : 'Ambil foto'} variant="secondary" loading={state.photoBusy} loadingTitle="Membuka kamera..." disabled={submitting || success} onPress={() => { void controller.attachPhoto('camera'); }} />
+        <Button title="Pilih dari galeri" variant="ghost" disabled={state.photoBusy || submitting || success} onPress={() => { void controller.attachPhoto('library'); }} />
+        {state.photo && <Button title="Hapus foto" variant="ghost" disabled={submitting || success} onPress={() => controller.removePhoto()} />}
+        {state.photoMessage && <Text accessibilityRole={state.photoMessage.kind === 'error' ? 'alert' : undefined} accessibilityLiveRegion="polite" style={state.photoMessage.kind === 'error' ? ui.error : ui.muted}>{state.photoMessage.text}</Text>}
+      </View>
       {state.submitError && <View style={ui.section}>
         <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={ui.error}>{state.submitError}</Text>
         <Button title="Coba kirim lagi" onPress={() => { void controller.submit(); }} />

@@ -84,7 +84,7 @@ test('controller + API: loading -> error -> retry -> loaded', async () => {
 });
 
 test('backend nyata: POST disimpan, GET membacanya, validasi dan kuota ditolak server', async () => {
-  const server = createApiServer({ clock: () => now });
+  const server = createApiServer({ clock: () => now, allowHeaderAuth: true });
   await new Promise<void>((resolve) => server.listen(0, resolve));
   const baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   try {

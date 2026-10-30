@@ -15,6 +15,8 @@ export interface LaundryOrder {
   updatedAt: string;
   status: LaundryStatus;
   statusHistory: { status: LaundryStatus; at: string }[];
+  // Optional photo of the laundry (data URI, taken with the camera or chosen from the gallery).
+  photoUri?: string;
   completedAt?: string;
   pickedUpAt?: string;
 }

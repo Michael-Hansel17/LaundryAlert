@@ -21,6 +21,7 @@ export class DemoStore {
   private clock: () => Date;
   private local?: LocalLaundryStorage;
   private writes: Promise<void> = Promise.resolve();
+  private dismissed = new Set<string>();
 
   static async open(storage: KeyValueStorage, clock: () => Date = () => new Date()) {
     const store = new DemoStore(clock);
@@ -62,8 +63,8 @@ export class DemoStore {
     return operation;
   }
 
-  submitPersisted(weight: string, notes: string, signal?: AbortSignal) {
-    return this.commit((draft) => draft.submit(weight, notes), signal);
+  submitPersisted(weight: string, notes: string, signal?: AbortSignal, photoUri?: string) {
+    return this.commit((draft) => draft.submit(weight, notes, photoUri), signal);
   }
   updateStatusPersisted(orderId: string, expectedStatus: LaundryStatus, target: LaundryStatus, signal?: AbortSignal) {
     return this.commit((draft) => {
@@ -74,11 +75,28 @@ export class DemoStore {
       return draft.state.orders.find((order) => order.id === orderId)!;
     }, signal);
   }
-  // Backend is the source of truth; this keeps a local copy so Dashboard/History show the new order.
-  mirrorRemoteOrder(order: LaundryOrder) {
+  // Backend is the source of truth. These keep the local copy in step so every screen shows the same data.
+  private noticesFor(orders: readonly LaundryOrder[], existing: readonly CompletionNotice[]) {
+    const kept = existing.filter((n) => orders.some((o) => o.id === n.orderId && o.status === 'selesai'));
+    const added = orders.filter((o) => o.status === 'selesai' && !kept.some((n) => n.orderId === o.id) && !this.dismissed.has(`notice-${o.id}`))
+      .map((o) => ({ id: `notice-${o.id}`, orderId: o.id, userId: o.userId, createdAt: o.completedAt ?? o.updatedAt }));
+    return [...kept, ...added];
+  }
+  replaceOrders(orders: readonly LaundryOrder[]) {
     return this.commit((draft) => {
-      if (draft.state.orders.some((o) => o.id === order.id)) return;
-      draft.publish({ ...draft.state, orders: [order, ...draft.state.orders] });
+      draft.publish({ ...draft.state, orders: [...orders], notices: draft.noticesFor(orders, draft.state.notices) });
+    });
+  }
+  upsertRemoteOrder(order: LaundryOrder) {
+    return this.commit((draft) => {
+      const exists = draft.state.orders.some((o) => o.id === order.id);
+      const next = exists ? draft.state.orders.map((o) => o.id === order.id ? order : o) : [order, ...draft.state.orders];
+      draft.publish({ ...draft.state, orders: next, notices: draft.noticesFor(next, draft.state.notices) });
+    });
+  }
+  removeRemoteOrder(orderId: string) {
+    return this.commit((draft) => {
+      draft.publish({ ...draft.state, orders: draft.state.orders.filter((o) => o.id !== orderId), notices: draft.state.notices.filter((n) => n.orderId !== orderId) });
     });
   }
   editPersisted(orderId: string, weightInput: string, notes: string) {
@@ -141,6 +159,8 @@ export class DemoStore {
     this.accounts = [...this.accounts, account];
     this.publish({ ...this.state, user: account.user });
   }
+  // Session established by the backend (token verified server-side).
+  signInRemote(user: User) { this.publish({ ...this.state, user }); }
   logout() { this.publish({ ...this.state, user: null }); }
 
   visibleOrders(): readonly LaundryOrder[] {
@@ -150,7 +170,7 @@ export class DemoStore {
   quota() {
     return calculateQuota(this.state.orders, this.session('resident'), this.clock());
   }
-  submit(weightInput: string, notes: string): LaundryOrder {
+  submit(weightInput: string, notes: string, photoUri?: string): LaundryOrder {
     const user = this.session('resident');
     const weight = parseWeight(weightInput);
     const now = this.clock().toISOString();
@@ -161,7 +181,7 @@ export class DemoStore {
     const order: LaundryOrder = {
       id: `LA-${this.clock().getTime()}-${++this.sequence}`, userId: user.id,
       userName: user.name, roomNumber: user.roomNumber, estimatedWeightKg: weight,
-      notes: notes.trim(), submittedAt: now, updatedAt: now, status: 'diterima',
+      notes: notes.trim(), submittedAt: now, updatedAt: now, status: 'diterima', ...(photoUri ? { photoUri } : {}),
       statusHistory: [{ status: 'diterima', at: now }],
     };
     this.publish({ ...this.state, orders: [order, ...this.state.orders] });
@@ -180,6 +200,7 @@ export class DemoStore {
   }
   dismissNotice(id: string) {
     const user = this.session('resident');
+    this.dismissed.add(id);
     this.publish({ ...this.state, notices: this.state.notices.filter((n) => n.id !== id || n.userId !== user.id) });
   }
 }

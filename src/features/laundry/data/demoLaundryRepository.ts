@@ -41,7 +41,7 @@ export class DemoLaundryRepository implements LaundryRepository {
     this.assertSession(signal);
     if (fail) throw new Error('Pengajuan belum terkirim karena layanan simulasi gagal. Silakan coba lagi.');
     // Validate quota again at commit to reject stale data. No write until success.
-    return this.store.submitPersisted(input.weight, input.notes, signal);
+    return this.store.submitPersisted(input.weight, input.notes, signal, input.photoUri);
   }
   subscribe(listener: (data: LaundryData) => void) {
     return this.store.subscribe(() => {

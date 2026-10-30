@@ -1,3 +1,6 @@
+// UI tests exercise the in-app demo repositories; the backend flow is covered by tests/*.test.ts.
+process.env.EXPO_PUBLIC_API_MODE = 'demo';
+
 module.exports = {
   preset: 'jest-expo',
   testMatch: ['<rootDir>/tests/ui/**/*.test.tsx'],

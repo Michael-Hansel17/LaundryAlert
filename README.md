@@ -1,8 +1,10 @@
 # LaundryAlert — Prototype Mobile
 
+**MVP lengkap:** cara menjalankan di [HowToRun.md](HowToRun.md), status fitur dan pengujian di [checklist_mvp.md](checklist_mvp.md). Satu perintah: `npm run dev`.
+
 Dokumen untuk reviewer: Local Data & Persistence di [docs/local-persistence/README.md](docs/local-persistence/README.md); Integrasi API (REST backend + 9 unit test) di [docs/api-integration/README.md](docs/api-integration/README.md). Jalankan semuanya (backend + web) dengan satu perintah: `npm run dev`.
 
-Prototype tugas kuliah dengan **React Native, Expo SDK 57, TypeScript, dan React Navigation**. Delapan halaman tersedia. Pengajuan laundry kini disimpan lokal dengan **AsyncStorage** dan tetap tersedia setelah refresh atau aplikasi dibuka ulang. Firebase belum dihubungkan.
+Prototype tugas kuliah dengan **React Native, Expo SDK 57, TypeScript, dan React Navigation**. Delapan halaman tersedia. Data laundry dan akun disimpan di **backend REST** (`server/`), dengan salinan lokal **AsyncStorage**. Advanced feature: autentikasi server (hash + token), notifikasi lokal, dan kamera untuk foto cucian. Firebase belum dihubungkan.
 
 ## Tugas Local Data & Persistence — selesai diimplementasikan
 
@@ -14,8 +16,8 @@ Verifikasi 9 Oktober 2026: TypeScript lulus, **33 tes logika/persistence + 32 te
 
 | Status | Fitur |
 |---|---|
-| Sudah dibuat | Login, registrasi, dashboard penghuni, pengajuan, detail/progres, riwayat, antrean admin/filter, pembaruan status, logout, komponen dan tema bersama |
-| Masih disimulasikan | Autentikasi, akun sementara, akun dan sesi login (data laundry sudah dipersist lokal), kuota 10 kg, pemberitahuan saat selesai |
+| Sudah dibuat | Login/registrasi lewat backend, dashboard penghuni, pengajuan (+foto), detail/progres, edit/hapus, riwayat, antrean admin/filter, pembaruan status lewat backend, notifikasi lokal saat Selesai, logout, komponen dan tema bersama |
+| Masih disimulasikan | Identitas hanya akun demo + token buatan sendiri (bukan Firebase Auth), notifikasi lokal tanpa push server, penyimpanan backend berupa file JSON |
 | Tahap integrasi Firebase | Firebase Authentication, Firestore dan sinkronisasi antarperangkat, aturan akses server, notifikasi push melalui Expo/FCM |
 
 ## Menjalankan di Windows
@@ -125,7 +127,7 @@ Bukti tambahan: [gagal submit dengan input tetap tersedia](./docs/state-manageme
 
 ## Batasan prototype
 
-**Order laundry tersimpan di AsyncStorage.** Restart/reload memuat order terakhir, termasuk hasil edit/delete dan status admin. Seed hanya dibuat ketika key penyimpanan belum ada. Credential registrasi sementara dan sesi login tetap berada dalam memori. Pemberitahuan selesai dibentuk kembali dari order saat startup. Menghapus data aplikasi/browser menghapus penyimpanan lokal.
+**Order laundry tersimpan di AsyncStorage.** Restart/reload memuat order terakhir, termasuk hasil edit/delete dan status admin. Seed hanya dibuat ketika key penyimpanan belum ada. Akun dan sesi login kini disimpan backend/token (lihat HowToRun.md), bukan di memori. Pemberitahuan selesai dibentuk kembali dari order saat startup. Menghapus data aplikasi/browser menghapus penyimpanan lokal.
 
 Pembaruan langsung terlihat di layar karena kedua peran memakai penyimpanan yang sama. Belum ada Firebase Auth, Firestore, sinkronisasi antarperangkat, maupun keamanan backend. Pembatasan peran/akses pada aplikasi hanya membantu konsistensi simulasi dan bukan pengganti autentikasi serta Firestore Security Rules.
 
@@ -156,7 +158,7 @@ TypeScript dan tes diperiksa kembali setelah fitur admin ditambahkan. Expo Docto
 | Pemeriksaan | Hasil |
 |---|---|
 | `npm run typecheck` | Lulus, tanpa kesalahan TypeScript |
-| `npm test` | 65 tes lulus: 33 logika/repository/persistence + 32 komponen/widget |
+| `npm test` | 97 tes lulus: 62 logika/backend + 35 komponen/widget |
 | `expo install --check` | Dependensi sesuai SDK |
 | Expo Doctor | 21/21 pemeriksaan lulus |
 | Ekspor Android/iOS/web | Berhasil; bundle native dikompilasi dengan Hermes |

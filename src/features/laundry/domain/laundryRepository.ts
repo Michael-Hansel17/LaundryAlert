@@ -4,7 +4,7 @@ export interface LaundryData {
   orders: readonly LaundryOrder[];
   quota: QuotaInfo;
 }
-export interface LaundrySubmissionInput { weight: string; notes: string }
+export interface LaundrySubmissionInput { weight: string; notes: string; photoUri?: string }
 export interface LaundryRepository {
   load(signal: AbortSignal): Promise<LaundryData>;
   submit(input: LaundrySubmissionInput, signal: AbortSignal): Promise<LaundryOrder>;

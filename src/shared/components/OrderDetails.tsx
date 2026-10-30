@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { LAUNDRY_STATUSES, STATUS_LABELS, type LaundryOrder } from '../../features/laundry/domain/models';
 import { theme, ui } from '../theme/theme';
 import { formatDate, formatKg } from '../utils/format';
@@ -13,6 +13,7 @@ export function OrderDetails({ order }: { order: LaundryOrder }) {
       <Text selectable style={ui.muted}>{order.id}</Text>
       <Text style={ui.muted}>Diantar {formatDate(order.submittedAt)}</Text>
       <Text style={ui.body}>Catatan: {order.notes || 'Tidak ada catatan khusus.'}</Text>
+      {order.photoUri && <Image source={{ uri: order.photoUri }} accessibilityLabel="Foto cucian" style={{ width: '100%', height: 200, borderRadius: 8 }} resizeMode="cover" />}
     </View>
     <View style={ui.card}>
       <Text style={ui.subtitle}>Perkembangan laundry</Text>

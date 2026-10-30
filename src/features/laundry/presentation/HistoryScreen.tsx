@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Text } from 'react-native';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -7,16 +8,21 @@ import { EmptyState } from '../../../shared/components/EmptyState';
 import { LaundryCard } from '../../../shared/components/LaundryCard';
 import { Screen } from '../../../shared/components/Screen';
 import { ui } from '../../../shared/theme/theme';
+import { SyncBanner } from '../../../shared/components/SyncBanner';
+import { useResidentSync } from '../state/ResidentSync';
 import { useLaundry } from '../hooks/useLaundry';
 
 type Props = CompositeScreenProps<BottomTabScreenProps<ResidentTabParams, 'History'>, NativeStackScreenProps<ResidentStackParams>>;
 
 export function HistoryScreen({ navigation }: Props) {
   const { orders } = useLaundry();
+  const { status, reload } = useResidentSync();
+  useEffect(() => navigation.addListener('focus', () => { void reload(); }), [navigation, reload]);
   return <Screen>
     <Text style={ui.title}>Riwayat laundry</Text>
     <Text style={ui.muted}>Semua pengajuanmu, termasuk cucian yang sudah diambil. Terbaru di atas.</Text>
-    {orders.length === 0 && <EmptyState title="Riwayat masih kosong" message="Pengajuan pertama akan muncul di sini." />}
+    <SyncBanner />
+    {status === 'loaded' && orders.length === 0 && <EmptyState title="Riwayat masih kosong" message="Pengajuan pertama akan muncul di sini." />}
     {orders.map((order) => <LaundryCard key={order.id} order={order} onPress={() => navigation.navigate('LaundryDetail', { orderId: order.id })} />)}
   </Screen>;
 }

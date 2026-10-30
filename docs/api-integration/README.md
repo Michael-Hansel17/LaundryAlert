@@ -62,7 +62,7 @@ npm run test:logic
 
 ## Batasan
 
-- Identitas hanya header `X-User-Id`, belum autentikasi sungguhan. Firebase Auth/Firestore adalah tahap berikutnya.
-- Hanya fitur pengajuan yang terhubung ke backend. Edit/hapus, status admin, dan login masih lokal.
+- Pada tugas ini identitas hanya header `X-User-Id`. Tugas MVP menggantinya dengan login dan token Bearer (lihat [checklist_mvp.md](../../checklist_mvp.md)); header hanya dipakai server mode tes (`allowHeaderAuth`).
+- Pada tugas ini hanya pengajuan yang terhubung ke backend. Pada tugas MVP, edit/hapus, status admin, dan login ikut lewat backend.
 - Setelah submit berhasil, order disalin ke penyimpanan lokal agar Dashboard/Riwayat menampilkannya. Backend tetap sumber data untuk layar Ajukan laundry.
 - Belum diuji di HP/emulator, dan belum ada rekaman layar atau screenshot demo.

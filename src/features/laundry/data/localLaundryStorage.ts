@@ -13,6 +13,8 @@ export interface LocalLaundryData {
 
 export const LAUNDRY_STORAGE_KEY = '@laundryalert/laundry/v1';
 const record = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+export const MAX_PHOTO_CHARS = 600_000;
+export const isPhotoUri = (value: unknown): value is string => typeof value === 'string' && value.length <= MAX_PHOTO_CHARS && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(value);
 const date = (value: unknown) => typeof value === 'string' && Number.isFinite(Date.parse(value));
 export function validOrder(value: unknown): value is LaundryOrder {
   if (!record(value)) return false;
@@ -24,6 +26,7 @@ export function validOrder(value: unknown): value is LaundryOrder {
     && LAUNDRY_STATUSES.includes(value.status as LaundryOrder['status'])
     && Array.isArray(value.statusHistory) && value.statusHistory.length > 0
     && value.statusHistory.every((event) => record(event) && LAUNDRY_STATUSES.includes(event.status as LaundryOrder['status']) && date(event.at))
+    && (value.photoUri === undefined || isPhotoUri(value.photoUri))
     && (value.completedAt === undefined || date(value.completedAt))
     && (value.pickedUpAt === undefined || date(value.pickedUpAt));
 }

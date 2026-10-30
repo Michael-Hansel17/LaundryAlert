@@ -3,9 +3,10 @@ import type { User } from '../../auth/domain/models';
 import type { LaundryData, LaundryRepository, LaundrySubmissionInput } from '../domain/laundryRepository';
 import type { LaundryOrder } from '../domain/models';
 import { calculateQuota } from '../domain/rules';
-import { ApiError, parseOrder, parseOrderList } from './orderDto';
+import { ApiClient, type FetchLike } from './apiClient';
+import { parseOrder, parseOrderList } from './orderDto';
 
-export type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
+export type { FetchLike };
 interface Options {
   fetchImpl?: FetchLike;
   clock?: () => Date;
@@ -18,47 +19,11 @@ interface Options {
 export class ApiLaundryRepository implements LaundryRepository {
   private orders: LaundryOrder[] = [];
   private listeners = new Set<(data: LaundryData) => void>();
-  private simulateFailure = false;
-  private fetchImpl: FetchLike;
+  private client: ApiClient;
   private clock: () => Date;
-  private timeoutMs: number;
-  constructor(private baseUrl: string, private user: User, private options: Options = {}) {
-    this.fetchImpl = options.fetchImpl ?? ((url, init) => fetch(url, init));
+  constructor(baseUrl: string, private user: User, private options: Options = {}) {
+    this.client = new ApiClient(baseUrl, user, { fetchImpl: options.fetchImpl, timeoutMs: options.timeoutMs ?? API_TIMEOUT_MS });
     this.clock = options.clock ?? (() => new Date());
-    this.timeoutMs = options.timeoutMs ?? API_TIMEOUT_MS;
-  }
-
-  private async request(path: string, init: RequestInit, signal: AbortSignal): Promise<unknown> {
-    if (signal.aborted) throw new Error('Operasi dibatalkan.');
-    const timeout = new AbortController();
-    let timedOut = false;
-    const timer = setTimeout(() => { timedOut = true; timeout.abort(); }, this.timeoutMs);
-    const cancel = () => timeout.abort();
-    signal.addEventListener('abort', cancel, { once: true });
-    const headers: Record<string, string> = { Accept: 'application/json', 'X-User-Id': this.user.id };
-    if (this.simulateFailure) { headers['X-Simulate-Failure'] = '1'; this.simulateFailure = false; }
-    if (init.body) headers['Content-Type'] = 'application/json';
-    try {
-      let response: Response;
-      try {
-        response = await this.fetchImpl(`${this.baseUrl}${path}`, { ...init, headers, signal: timeout.signal });
-      } catch {
-        if (signal.aborted) throw new Error('Operasi dibatalkan.');
-        if (timedOut) throw new ApiError('timeout', 'Server tidak merespons tepat waktu. Periksa koneksi lalu coba lagi.');
-        throw new ApiError('network', 'Tidak dapat terhubung ke server. Pastikan backend berjalan (npm run api) lalu coba lagi.');
-      }
-      const text = await response.text();
-      if (!response.ok) {
-        let detail = '';
-        try { detail = (JSON.parse(text) as { message?: string }).message ?? ''; } catch { /* non-JSON error body */ }
-        throw new ApiError('http', detail || `Server menjawab dengan kesalahan ${response.status}. Silakan coba lagi.`, response.status);
-      }
-      try { return JSON.parse(text); }
-      catch { throw new ApiError('parse', 'Respons server rusak dan tidak dapat dibaca (bukan JSON valid).'); }
-    } finally {
-      clearTimeout(timer);
-      signal.removeEventListener('abort', cancel);
-    }
   }
 
   private snapshot(): LaundryData {
@@ -67,15 +32,15 @@ export class ApiLaundryRepository implements LaundryRepository {
   }
 
   async load(signal: AbortSignal): Promise<LaundryData> {
-    const body = await this.request('/api/orders', { method: 'GET' }, signal);
+    const body = await this.client.request('/api/orders', { method: 'GET' }, signal);
     this.orders = parseOrderList(body).filter((order) => order.userId === this.user.id);
     return this.snapshot();
   }
 
   async submit(input: LaundrySubmissionInput, signal: AbortSignal): Promise<LaundryOrder> {
-    const body = await this.request('/api/orders', {
+    const body = await this.client.request('/api/orders', {
       method: 'POST',
-      body: JSON.stringify({ weight: input.weight, notes: input.notes, userName: this.user.name, roomNumber: this.user.roomNumber }),
+      body: JSON.stringify({ weight: input.weight, notes: input.notes, photoUri: input.photoUri, userName: this.user.name, roomNumber: this.user.roomNumber }),
     }, signal);
     const order = parseOrder((body as { order?: unknown } | null)?.order);
     this.orders = [order, ...this.orders.filter((existing) => existing.id !== order.id)];
@@ -90,6 +55,6 @@ export class ApiLaundryRepository implements LaundryRepository {
     return () => { this.listeners.delete(listener); };
   }
   // Dev panel: the next request asks the server for a 503.
-  failNextLoad() { this.simulateFailure = true; }
-  failNextSubmit() { this.simulateFailure = true; }
+  failNextLoad() { this.client.failNext(); }
+  failNextSubmit() { this.client.failNext(); }
 }

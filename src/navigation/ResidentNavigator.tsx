@@ -6,6 +6,7 @@ import { DashboardScreen } from '../features/laundry/presentation/DashboardScree
 import { HistoryScreen } from '../features/laundry/presentation/HistoryScreen';
 import { LaundryDetailScreen } from '../features/laundry/presentation/LaundryDetailScreen';
 import { SubmitLaundryScreen } from '../features/laundry/presentation/SubmitLaundryScreen';
+import { ResidentSyncProvider } from '../features/laundry/state/ResidentSync';
 import { theme } from '../shared/theme/theme';
 import { LogoutButton } from './LogoutButton';
 import type { ResidentStackParams, ResidentTabParams } from './types';
@@ -29,9 +30,9 @@ function ResidentTabs() {
 }
 
 export function ResidentNavigator() {
-  return <Stack.Navigator>
+  return <ResidentSyncProvider><Stack.Navigator>
     <Stack.Screen name="ResidentTabs" component={ResidentTabs} options={{ headerShown: false }} />
     <Stack.Screen name="SubmitLaundry" component={SubmitLaundryScreen} options={{ title: 'Pengajuan laundry' }} />
     <Stack.Screen name="LaundryDetail" component={LaundryDetailScreen} options={{ title: 'Detail laundry' }} />
-  </Stack.Navigator>;
+  </Stack.Navigator></ResidentSyncProvider>;
 }
