@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { DEMO_EMAILS, DEMO_PASSWORD } from '../../../config/constants';
 import type { AuthStackParams } from '../../../navigation/types';
@@ -16,6 +16,7 @@ export function LoginScreen({ navigation }: NativeStackScreenProps<AuthStackPara
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const passwordRef = useRef<TextInput>(null);
   async function login(address = email, secret = password) {
     if (busy) return;
     if (!address.trim() || !secret) { setError('Email dan kata sandi wajib diisi.'); return; }
@@ -36,8 +37,8 @@ export function LoginScreen({ navigation }: NativeStackScreenProps<AuthStackPara
     </View>
     <View style={ui.section}>
       <Text style={ui.subtitle}>Masuk dengan akun sementara</Text>
-      <Input label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" autoComplete="email" placeholder="nama@contoh.com" />
-      <Input label="Kata sandi" value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoComplete="current-password" placeholder="Minimal 6 karakter" />
+      <Input label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" autoComplete="email" placeholder="nama@contoh.com" returnKeyType="next" submitBehavior="submit" onSubmitEditing={() => passwordRef.current?.focus()} />
+      <Input ref={passwordRef} label="Kata sandi" value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoComplete="current-password" placeholder="Minimal 6 karakter" returnKeyType="go" onSubmitEditing={() => { void login(); }} />
       {!!error && <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={ui.error}>{error}</Text>}
       <Button title="Masuk" loading={busy} loadingTitle="Memeriksa akun..." onPress={() => { void login(); }} />
       <Button title="Belum punya akun? Daftar" variant="ghost" onPress={() => navigation.navigate('Register')} />

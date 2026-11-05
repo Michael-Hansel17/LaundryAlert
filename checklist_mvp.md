@@ -55,3 +55,12 @@ Legenda: ✅ lulus · 🟡 lulus sebagian / ada batasan · ❌ belum.
 - Token sesi disimpan di AsyncStorage (di web: `localStorage`). Produksi sebaiknya `expo-secure-store` dan HTTPS.
 - Backend memakai file JSON dan satu proses; tanpa rate-limit atau kontrol konkurensi lintas proses.
 - Dokumen persistence dan API per tugas: [docs/local-persistence/README.md](docs/local-persistence/README.md), [docs/api-integration/README.md](docs/api-integration/README.md).
+
+## F. Kualitas UI (layout, keyboard, aksesibilitas, feedback)
+
+| Item | Implementasi | Status |
+|---|---|---|
+| Layout adaptif | `Screen` memusatkan konten dengan lebar maks 880 dan padding menyesuaikan lebar; `CardList` 1 kolom di HP, 2 kolom di layar ≥768; orientasi `default` | ✅ (belum diuji di perangkat fisik) |
+| Keyboard-safe | `KeyboardAvoidingView` + `ScrollView` (`keyboardShouldPersistTaps`, dismiss saat scroll); Enter pindah antar input di Masuk/Daftar | ✅ |
+| Aksesibilitas dasar | Label/role/state pada tombol dan input, `accessibilityHint` dari hint input, skala font dibatasi 1,6× pada tombol dan input | ✅ |
+| Feedback aksi | Spinner + teks proses, form terkunci, pesan sukses/error `liveRegion` | ✅ |

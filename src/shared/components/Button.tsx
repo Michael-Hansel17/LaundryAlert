@@ -8,14 +8,15 @@ interface Props {
   disabled?: boolean;
   loading?: boolean;
   loadingTitle?: string;
+  hint?: string;
 }
 
-export function Button({ title, onPress, variant = 'primary', disabled = false, loading = false, loadingTitle = 'Memproses...' }: Props) {
+export function Button({ title, onPress, variant = 'primary', disabled = false, loading = false, loadingTitle = 'Memproses...', hint }: Props) {
   const blocked = disabled || loading;
-  return <Pressable accessibilityRole="button" accessibilityState={{ disabled: blocked, busy: loading }} onPress={onPress} disabled={blocked}
+  return <Pressable accessibilityRole="button" accessibilityLabel={loading ? loadingTitle : title} accessibilityHint={hint} accessibilityState={{ disabled: blocked, busy: loading }} onPress={onPress} disabled={blocked}
     style={({ pressed }) => [styles.base, styles[variant], (blocked || pressed) && styles.dim]}>
     {loading && <ActivityIndicator color={variant === 'primary' ? theme.colors.surface : theme.colors.primary} />}
-    <Text style={[styles.label, { color: variant === 'primary' ? theme.colors.surface : theme.colors.primary }]}>{loading ? loadingTitle : title}</Text>
+    <Text maxFontSizeMultiplier={1.6} style={[styles.label, { color: variant === 'primary' ? theme.colors.surface : theme.colors.primary }]}>{loading ? loadingTitle : title}</Text>
   </Pressable>;
 }
 

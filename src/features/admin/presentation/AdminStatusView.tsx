@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Button } from '../../../shared/components/Button';
 import { EmptyState } from '../../../shared/components/EmptyState';
 import { LaundryCard } from '../../../shared/components/LaundryCard';
+import { CardList } from '../../../shared/components/Screen';
 import { OrderDetails } from '../../../shared/components/OrderDetails';
 import { theme, ui } from '../../../shared/theme/theme';
 import { LAUNDRY_STATUSES, STATUS_LABELS } from '../../laundry/domain/models';
@@ -60,7 +61,7 @@ export function AdminStatusView({ controller, onOpenOrder, onSimulateLoadError, 
       </View>
       <Text style={ui.muted}>{filtered.length} pengajuan ditampilkan</Text>
       {filtered.length === 0 && <EmptyState title="Tidak ada pengajuan" message="Coba filter status lain atau buat pengajuan sebagai penghuni." />}
-      {filtered.map((entry) => <LaundryCard key={entry.id} order={entry} showResident onPress={() => onOpenOrder?.(entry.id)} />)}
+      <CardList>{filtered.map((entry) => <LaundryCard key={entry.id} order={entry} showResident onPress={() => onOpenOrder?.(entry.id)} />)}</CardList>
     </>}
     <Button title="Muat ulang data admin" variant="secondary" disabled={submitting} onPress={() => { void controller.load(); }} />
     <Text style={ui.muted}>Status tersimpan di server. Penghuni menerima notifikasi lokal; belum ada push notification.</Text>

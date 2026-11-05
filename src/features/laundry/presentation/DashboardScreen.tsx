@@ -8,7 +8,7 @@ import { Button } from '../../../shared/components/Button';
 import { EmptyState } from '../../../shared/components/EmptyState';
 import { LaundryCard } from '../../../shared/components/LaundryCard';
 import { QuotaCard } from '../../../shared/components/QuotaCard';
-import { Screen } from '../../../shared/components/Screen';
+import { CardList, Screen } from '../../../shared/components/Screen';
 import { theme, ui } from '../../../shared/theme/theme';
 import { NotificationCard } from '../../../shared/components/NotificationCard';
 import { SyncBanner } from '../../../shared/components/SyncBanner';
@@ -42,7 +42,7 @@ export function DashboardScreen({ navigation }: Props) {
     <View style={ui.section}>
       <Text style={ui.subtitle}>Laundry aktif</Text>
       {status === 'loaded' && active.length === 0 && <EmptyState title="Belum ada laundry aktif" message="Ajukan laundry untuk mulai memantau cucianmu." />}
-      {active.map((order) => <LaundryCard key={order.id} order={order} onPress={() => navigation.navigate('LaundryDetail', { orderId: order.id })} />)}
+      <CardList>{active.map((order) => <LaundryCard key={order.id} order={order} onPress={() => navigation.navigate('LaundryDetail', { orderId: order.id })} />)}</CardList>
     </View>
     <Button title="Lihat semua riwayat" variant="secondary" onPress={() => navigation.navigate('History')} />
   </Screen>;

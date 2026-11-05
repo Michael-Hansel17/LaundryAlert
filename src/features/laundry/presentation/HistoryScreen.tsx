@@ -6,7 +6,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ResidentStackParams, ResidentTabParams } from '../../../navigation/types';
 import { EmptyState } from '../../../shared/components/EmptyState';
 import { LaundryCard } from '../../../shared/components/LaundryCard';
-import { Screen } from '../../../shared/components/Screen';
+import { CardList, Screen } from '../../../shared/components/Screen';
 import { ui } from '../../../shared/theme/theme';
 import { SyncBanner } from '../../../shared/components/SyncBanner';
 import { useResidentSync } from '../state/ResidentSync';
@@ -23,6 +23,6 @@ export function HistoryScreen({ navigation }: Props) {
     <Text style={ui.muted}>Semua pengajuanmu, termasuk cucian yang sudah diambil. Terbaru di atas.</Text>
     <SyncBanner />
     {status === 'loaded' && orders.length === 0 && <EmptyState title="Riwayat masih kosong" message="Pengajuan pertama akan muncul di sini." />}
-    {orders.map((order) => <LaundryCard key={order.id} order={order} onPress={() => navigation.navigate('LaundryDetail', { orderId: order.id })} />)}
+    <CardList>{orders.map((order) => <LaundryCard key={order.id} order={order} onPress={() => navigation.navigate('LaundryDetail', { orderId: order.id })} />)}</CardList>
   </Screen>;
 }
