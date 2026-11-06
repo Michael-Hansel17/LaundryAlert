@@ -1,0 +1,9 @@
+Pohon aksesibilitas layar Masuk (Chrome DevTools: Accessibility.getFullAXTree)
+
+heading  | LaundryAlert
+button   | Masuk demo penghuni
+button   | Masuk demo admin
+button   | Masuk
+button   | Belum punya akun? Daftar
+textbox  | Email
+textbox  | Kata sandi

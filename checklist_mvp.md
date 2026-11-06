@@ -54,6 +54,7 @@ Legenda: ✅ lulus · 🟡 lulus sebagian / ada batasan · ❌ belum.
 - Notifikasi hanya muncul saat aplikasi/tab terbuka (polling 15 detik); push server (FCM/APNs) di luar lingkup MVP.
 - Token sesi disimpan di AsyncStorage (di web: `localStorage`). Produksi sebaiknya `expo-secure-store` dan HTTPS.
 - Backend memakai file JSON dan satu proses; tanpa rate-limit atau kontrol konkurensi lintas proses.
+- Dokumentasi UI (layout, keyboard, aksesibilitas, feedback): [docs/ui-quality/README.md](docs/ui-quality/README.md)
 - Dokumen persistence dan API per tugas: [docs/local-persistence/README.md](docs/local-persistence/README.md), [docs/api-integration/README.md](docs/api-integration/README.md).
 
 ## F. Kualitas UI (layout, keyboard, aksesibilitas, feedback)
