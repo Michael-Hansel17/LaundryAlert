@@ -1,6 +1,6 @@
 import type { LaundryData, LaundryRepository } from '../domain/laundryRepository';
 import type { LaundryOrder } from '../domain/models';
-import { parseWeight } from '../domain/rules';
+import { assertWithinQuota, parseWeight } from '../domain/rules';
 import type { PhotoPicker, PhotoResult } from '../../../shared/services/photoPicker';
 
 export interface SubmissionState {
@@ -99,7 +99,7 @@ export class LaundrySubmissionController {
     if (state.submitStatus === 'submitting' || state.submitStatus === 'success' || state.loadStatus !== 'loaded' || !state.data) return;
     try {
       const weight = parseWeight(state.weight);
-      if (Math.round(weight * 100) > Math.round(state.data.quota.remainingKg * 100)) throw new Error(`Berat melebihi sisa kuota ${state.data.quota.remainingKg.toLocaleString('id-ID')} kg.`);
+      assertWithinQuota(weight, state.data.quota.remainingKg);
     } catch (error) {
       this.patch({ validationError: message(error), submitStatus: 'idle', submitError: null });
       return;
