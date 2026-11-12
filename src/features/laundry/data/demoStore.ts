@@ -1,7 +1,7 @@
 import { authenticate, registerAccount, type DemoAccount } from '../../auth/data/authService';
 import type { RegistrationInput, User } from '../../auth/domain/models';
 import type { CompletionNotice, LaundryOrder, LaundryStatus } from '../domain/models';
-import { calculateQuota, parseWeight, transitionOrder } from '../domain/rules';
+import { assertWithinQuota, calculateQuota, normalizeNotes, parseWeight, transitionOrder } from '../domain/rules';
 import { createSeed } from './seed';
 import { LocalLaundryStorage, type KeyValueStorage } from './localLaundryStorage';
 
@@ -104,8 +104,8 @@ export class DemoStore {
       const order = draft.editableOrder(orderId);
       const weight = parseWeight(weightInput);
       const remaining = calculateQuota(draft.state.orders.filter((o) => o.id !== orderId), draft.session('resident'), order.submittedAt).remainingKg;
-      if (Math.round(weight * 100) > Math.round(remaining * 100)) throw new Error('Berat melebihi sisa kuota pada bulan pengajuan.');
-      const updated = { ...order, estimatedWeightKg: weight, notes: notes.trim(), updatedAt: draft.clock().toISOString() };
+      assertWithinQuota(weight, remaining, 'Berat melebihi sisa kuota pada bulan pengajuan.');
+      const updated = { ...order, estimatedWeightKg: weight, notes: normalizeNotes(notes), updatedAt: draft.clock().toISOString() };
       draft.publish({ ...draft.state, orders: draft.state.orders.map((o) => o.id === orderId ? updated : o) });
       return updated;
     });
@@ -174,14 +174,11 @@ export class DemoStore {
     const user = this.session('resident');
     const weight = parseWeight(weightInput);
     const now = this.clock().toISOString();
-    const quota = calculateQuota(this.state.orders, user, now);
-    if (Math.round(weight * 100) > Math.round(quota.remainingKg * 100)) {
-      throw new Error(`Berat melebihi sisa kuota ${quota.remainingKg.toLocaleString('id-ID')} kg.`);
-    }
+    assertWithinQuota(weight, calculateQuota(this.state.orders, user, now).remainingKg);
     const order: LaundryOrder = {
       id: `LA-${this.clock().getTime()}-${++this.sequence}`, userId: user.id,
       userName: user.name, roomNumber: user.roomNumber, estimatedWeightKg: weight,
-      notes: notes.trim(), submittedAt: now, updatedAt: now, status: 'diterima', ...(photoUri ? { photoUri } : {}),
+      notes: normalizeNotes(notes), submittedAt: now, updatedAt: now, status: 'diterima', ...(photoUri ? { photoUri } : {}),
       statusHistory: [{ status: 'diterima', at: now }],
     };
     this.publish({ ...this.state, orders: [order, ...this.state.orders] });

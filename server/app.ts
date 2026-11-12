@@ -9,7 +9,7 @@ import type { RegistrationInput, User } from '../src/features/auth/domain/models
 import { hashPassword, signToken, verifyPassword, verifyToken } from './auth';
 import { isPhotoUri, validOrder } from '../src/features/laundry/data/localLaundryStorage';
 import { LAUNDRY_STATUSES, type LaundryOrder, type LaundryStatus } from '../src/features/laundry/domain/models';
-import { calculateQuota, parseWeight, transitionOrder } from '../src/features/laundry/domain/rules';
+import { assertWithinQuota, calculateQuota, normalizeNotes, parseWeight, transitionOrder } from '../src/features/laundry/domain/rules';
 
 interface ServerOptions {
   file?: string;
@@ -89,10 +89,7 @@ export function createApiServer(options: ServerOptions = {}): Server {
   // Weight must fit in the quota of the month the order was submitted in.
   const checkWeight = (raw: unknown, others: LaundryOrder[], userId: string, at: string) => {
     const weight = parseWeight(String(raw ?? ''));
-    const quota = calculateQuota(others, resident(userId), at);
-    if (Math.round(weight * 100) > Math.round(quota.remainingKg * 100)) {
-      throw new Error(`Berat melebihi sisa kuota ${quota.remainingKg.toLocaleString('id-ID')} kg.`);
-    }
+    assertWithinQuota(weight, calculateQuota(others, resident(userId), at).remainingKg);
     return weight;
   };
 
@@ -165,7 +162,7 @@ export function createApiServer(options: ServerOptions = {}): Server {
           const order: LaundryOrder = {
             id: `LA-${clock().getTime()}-${++sequence}`, userId,
             userName: String(input.userName ?? 'Penghuni'), roomNumber: String(input.roomNumber ?? '-'),
-            estimatedWeightKg: weight, notes: String(input.notes ?? '').trim(),
+            estimatedWeightKg: weight, notes: normalizeNotes(input.notes),
             ...(isPhotoUri(input.photoUri) ? { photoUri: input.photoUri } : {}),
             submittedAt: now, updatedAt: now, status: 'diterima', statusHistory: [{ status: 'diterima', at: now }],
           };
@@ -204,7 +201,7 @@ export function createApiServer(options: ServerOptions = {}): Server {
       }
       const input = await readJson(req);
       const weight = checkWeight(input.weight, orders.filter((order) => order.id !== current.id), userId, current.submittedAt);
-      const updated: LaundryOrder = { ...current, estimatedWeightKg: weight, notes: String(input.notes ?? '').trim(), updatedAt: clock().toISOString() };
+      const updated: LaundryOrder = { ...current, estimatedWeightKg: weight, notes: normalizeNotes(input.notes), updatedAt: clock().toISOString() };
       orders = orders.map((order) => order.id === current.id ? updated : order);
       save();
       return send(res, 200, { order: updated });

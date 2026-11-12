@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DEMO_EMAILS, DEMO_PASSWORD } from '../src/config/constants';
 import { DemoStore } from '../src/features/laundry/data/demoStore';
-import { monthInJakarta, parseWeight } from '../src/features/laundry/domain/rules';
+import { assertWithinQuota, monthInJakarta, normalizeNotes, parseWeight } from '../src/features/laundry/domain/rules';
 import type { RegistrationInput } from '../src/features/auth/domain/models';
 
 const NOW = new Date('2026-10-02T03:00:00.000Z');
@@ -19,6 +19,15 @@ test('berat menerima koma/titik dan menolak angka tidak valid', () => {
   for (const input of ['', 'abc', '0', '0,00', '-2', '1.234', '1e2', 'Infinity', '2 kg', '2,3.4', '99999999999999999999999']) {
     assert.throws(() => parseWeight(input), Error, input);
   }
+});
+
+test('assertWithinQuota membandingkan per 0,01 kg; normalizeNotes memangkas dan aman untuk nilai kosong', () => {
+  assertWithinQuota(0.3, 0.1 + 0.2);
+  assert.throws(() => assertWithinQuota(2.01, 2), /melebihi sisa kuota 2 kg/);
+  assert.throws(() => assertWithinQuota(3, 1, 'pesan khusus'), /pesan khusus/);
+  assert.equal(normalizeNotes('  pisahkan putih  '), 'pisahkan putih');
+  assert.equal(normalizeNotes(undefined), '');
+  assert.equal(normalizeNotes(null), '');
 });
 
 test('kuota seed hanya menghitung pemilik dan bulan pengajuan', () => {

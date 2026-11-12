@@ -21,6 +21,17 @@ export function parseWeight(input: string): number {
   return hundredths / 100;
 }
 
+// Compared in hundredths of a kg so float rounding never lets 0.01 kg slip past the quota.
+export function assertWithinQuota(weightKg: number, remainingKg: number, message?: string) {
+  if (Math.round(weightKg * 100) > Math.round(remainingKg * 100)) {
+    throw new Error(message ?? `Berat melebihi sisa kuota ${remainingKg.toLocaleString('id-ID')} kg.`);
+  }
+}
+
+export function normalizeNotes(value: unknown): string {
+  return String(value ?? '').trim();
+}
+
 export function calculateQuota(orders: readonly LaundryOrder[], user: User, now: Date | string): QuotaInfo {
   const month = monthInJakarta(now);
   const used = orders
