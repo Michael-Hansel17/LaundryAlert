@@ -19,7 +19,6 @@ export function LoginScreen({ navigation }: NativeStackScreenProps<AuthStackPara
   const passwordRef = useRef<TextInput>(null);
   async function login(address = email, secret = password) {
     if (busy) return;
-    if (!address.trim() || !secret) { setError('Email dan kata sandi wajib diisi.'); return; }
     setBusy(true); setError('');
     try { await signIn(address, secret); } catch (e) { setError(errorMessage(e)); setBusy(false); }
   }

@@ -3,7 +3,8 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { MONTHLY_QUOTA_KG } from '../src/config/constants';
-import { normalizeEmail, registerAccount, type DemoAccount } from '../src/features/auth/data/authService';
+import { registerAccount, type DemoAccount } from '../src/features/auth/data/authService';
+import { normalizeEmail } from '../src/features/auth/domain/validation';
 import type { RegistrationInput, User } from '../src/features/auth/domain/models';
 import { hashPassword, signToken, verifyPassword, verifyToken } from './auth';
 import { isPhotoUri, validOrder } from '../src/features/laundry/data/localLaundryStorage';
