@@ -6,13 +6,12 @@ import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
 import { Screen } from '../../../shared/components/Screen';
 import { ui } from '../../../shared/theme/theme';
-import { errorMessage } from '../../../shared/utils/format';
+import { useFormSubmit } from '../../../shared/hooks/useFormSubmit';
 
 export function RegisterScreen() {
   const { signUp } = useAuth();
-  const [busy, setBusy] = useState(false);
+  const { busy, error, submit } = useFormSubmit(signUp);
   const [input, setInput] = useState<RegistrationInput>({ name: '', email: '', roomNumber: '', password: '', confirmPassword: '' });
-  const [error, setError] = useState('');
   const refs = [useRef<TextInput>(null), useRef<TextInput>(null), useRef<TextInput>(null), useRef<TextInput>(null)];
   const next = (i: number) => () => refs[i]?.current?.focus();
   const set = (key: keyof RegistrationInput) => (value: string) => setInput((current) => ({ ...current, [key]: value }));
@@ -25,10 +24,6 @@ export function RegisterScreen() {
     <Input ref={refs[2]} label="Kata sandi" returnKeyType="next" submitBehavior="submit" onSubmitEditing={next(3)} hint="Minimal 6 karakter" value={input.password} onChangeText={set('password')} secureTextEntry autoCapitalize="none" autoComplete="new-password" />
     <Input ref={refs[3]} label="Konfirmasi kata sandi" returnKeyType="done" value={input.confirmPassword} onChangeText={set('confirmPassword')} secureTextEntry autoCapitalize="none" autoComplete="new-password" />
     {!!error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}
-    <Button title="Daftar dan masuk" loading={busy} loadingTitle="Mendaftarkan..." onPress={() => {
-      if (busy) return;
-      setBusy(true); setError('');
-      signUp(input).catch((e: unknown) => { setError(errorMessage(e)); setBusy(false); });
-    }} />
+    <Button title="Daftar dan masuk" loading={busy} loadingTitle="Mendaftarkan..." onPress={() => { void submit(input); }} />
   </Screen>;
 }

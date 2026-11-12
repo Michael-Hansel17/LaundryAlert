@@ -7,21 +7,16 @@ import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
 import { Screen } from '../../../shared/components/Screen';
 import { theme, ui } from '../../../shared/theme/theme';
-import { errorMessage } from '../../../shared/utils/format';
+import { useFormSubmit } from '../../../shared/hooks/useFormSubmit';
 import { useAuth } from '../hooks/useAuth';
 
 export function LoginScreen({ navigation }: NativeStackScreenProps<AuthStackParams, 'Login'>) {
   const { signIn } = useAuth();
-  const [busy, setBusy] = useState(false);
+  const { busy, error, submit } = useFormSubmit(signIn);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const passwordRef = useRef<TextInput>(null);
-  async function login(address = email, secret = password) {
-    if (busy) return;
-    setBusy(true); setError('');
-    try { await signIn(address, secret); } catch (e) { setError(errorMessage(e)); setBusy(false); }
-  }
+  const login = (address = email, secret = password) => submit(address, secret);
   return <Screen>
     <View style={{ gap: theme.spacing.sm }}>
       <Text style={[ui.title, { color: theme.colors.primary }]}>LaundryAlert</Text>
