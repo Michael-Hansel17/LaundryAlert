@@ -156,6 +156,20 @@ Pemeriksaan: TypeScript, 27 tes domain/store/repository dengan Node test runner 
 
 Seluruh 53 tes lulus. Bukti enam kondisi setiap fitur ada di `docs/state-management/` dan `docs/admin-state-management/`, beserta panduan reproduksi pada README. Pengujian browser memeriksa pemulihan retry, kuota setelah submit, akun baru tanpa order, perubahan status admin, hasil filter kosong, dan pemberitahuan penghuni. TypeScript dan tes telah diperiksa kembali untuk fitur admin; Expo Doctor dan ekspor native di atas berasal dari pemeriksaan sebelumnya. HP/emulator belum diuji; ekspor bundle bukan pengganti uji perangkat.
 
+## Pemisahan tanggung jawab: Form / validation / repository
+
+Setiap aturan input hanya ditulis sekali dan dipakai ulang oleh layar, DemoStore, dan backend (`server/app.ts`).
+
+| Lapisan | Tanggung jawab | File |
+| --- | --- | --- |
+| Form (input + status UI) | Menyimpan isi kolom, merender pesan error/loading; tidak berisi aturan | `LoginScreen.tsx`, `RegisterScreen.tsx`, `SubmitLaundryView.tsx`; status bersama di `shared/hooks/useFormSubmit.ts` (busy, error, guard double-submit) |
+| validation (aturan input) | Fungsi murni tanpa jaringan/penyimpanan | `auth/domain/validation.ts` (`normalizeEmail`, `validateLogin`, `validateRegistration`, `MIN_PASSWORD_LENGTH`); `laundry/domain/rules.ts` (`parseWeight`, `assertWithinQuota`, `normalizeNotes`) |
+| repository (request API) | Satu-satunya tempat request HTTP dan parsing respons | `auth/data/authApi.ts` (`AuthApi`), `laundry/data/apiLaundryRepository.ts`, `admin/data/apiAdminRepository.ts` |
+
+Alur daftar: `RegisterScreen → useFormSubmit → useAuth.signUp → validateRegistration → AuthApi.register`; backend menjalankan `registerAccount` yang memakai `validateRegistration` yang sama, lalu memeriksa email ganda.
+
+Refactor dilakukan per langkah (tes awal lulus → pindahkan satu bagian → tes ulang → commit): validasi auth, aturan kuota/catatan, lalu hook status form. Tes: `tests/validation.test.ts`, kasus baru di `tests/demoStore.test.ts`, dan `tests/ui/authForms.test.tsx`.
+
 ## Pemisahan fitur Kelola Status Admin
 
 `AdminDashboardScreen / AdminDetailScreen → useAdminStatus → AdminStatusController → AdminRepository → DemoAdminRepository → DemoStore`.
