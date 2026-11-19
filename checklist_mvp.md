@@ -2,7 +2,7 @@
 
 Lingkup mengikuti "Daftar Fitur Inti" dan "Kriteria Aplikasi Dinyatakan Berhasil" di [README.md](README.md). Cara menjalankan: [HowToRun.md](HowToRun.md).
 
-**Hasil pengujian otomatis** (`npm run typecheck && npm test`): TypeScript lulus, **62 tes logika/backend PASSED**, **35 tes UI PASSED** (total 97).
+**Hasil pengujian otomatis** (`npm run typecheck && npm test`): TypeScript lulus, **78 tes logika/backend PASSED**, **42 tes UI PASSED** (total 120).
 Legenda: ✅ lulus · 🟡 lulus sebagian / ada batasan · ❌ belum.
 
 ## A. Fitur inti MVP
@@ -46,6 +46,14 @@ Legenda: ✅ lulus · 🟡 lulus sebagian / ada batasan · ❌ belum.
 | Penyimpanan lokal (AsyncStorage) tetap berjalan; tes persistence sebelumnya masih lulus | ✅ |
 | Mode `EXPO_PUBLIC_API_MODE=demo` tanpa backend | ✅ (dipakai tes UI) |
 | TypeScript tanpa error | ✅ |
+
+## D2. Release Candidate
+
+| Item | Implementasi | Tes | Status |
+|---|---|---|---|
+| Log sistem saat aplikasi berjalan | Logger aplikasi (500 entri, tersimpan di perangkat, redaksi sandi/token/foto), crash handler + error boundary, layar **Log diagnostik** (filter, bagikan, hapus). Log server per hari di `server/data/logs/` dengan `reqId` yang sama seperti di aplikasi | ✅ `logger.test.ts`, `serverLogging.test.ts`, UI `diagnostics.test.tsx` | ✅ diuji di browser: login gagal/berhasil tercatat, log tetap ada setelah reload, `reqId` cocok dengan file server, sandi tidak tercatat |
+| File APK | `eas.json` profil `preview` (APK, backend IP LAN) dan `preview-demo` (tanpa backend), `android.package`, cleartext HTTP untuk IP lokal, izin kamera. Panduan di HowToRun §8 | ✅ `expo config` valid, `expo-doctor` hanya melaporkan selisih versi patch yang sudah ada | 🟡 build butuh login akun Expo; APK belum dibuild atau dicoba di HP |
+| Rilis Play Store | Di luar lingkup | – | – |
 
 ## E. Belum diuji / batasan
 

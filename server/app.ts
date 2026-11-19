@@ -7,6 +7,7 @@ import { registerAccount, type DemoAccount } from '../src/features/auth/data/aut
 import { normalizeEmail } from '../src/features/auth/domain/validation';
 import type { RegistrationInput, User } from '../src/features/auth/domain/models';
 import { hashPassword, signToken, verifyPassword, verifyToken } from './auth';
+import { noopLogger, type ServerLogger } from './logger';
 import { isPhotoUri, validOrder } from '../src/features/laundry/data/localLaundryStorage';
 import { LAUNDRY_STATUSES, type LaundryOrder, type LaundryStatus } from '../src/features/laundry/domain/models';
 import { assertWithinQuota, calculateQuota, normalizeNotes, parseWeight, transitionOrder } from '../src/features/laundry/domain/rules';
@@ -23,6 +24,8 @@ interface ServerOptions {
   tokenTtlMs?: number;
   // Test-only shortcut: trust X-User-Id / X-User-Role instead of a Bearer token. Never enable in main.ts.
   allowHeaderAuth?: boolean;
+  // Request / error log (server/logger.ts). Defaults to no logging.
+  logger?: ServerLogger;
 }
 
 interface StoredAccount { user: User; salt: string; hash: string }
@@ -37,6 +40,9 @@ interface StoredAccount { user: User; salt: string; hash: string }
 //   PATCH  /api/orders/:id/status admin moves an order one step forward
 export function createApiServer(options: ServerOptions = {}): Server {
   const clock = options.clock ?? (() => new Date());
+  const log = options.logger ?? noopLogger;
+  // Per-response facts for the request log line (error message sent, who made the request).
+  const trace = new WeakMap<ServerResponse, { message?: string; userId?: string; error?: unknown }>();
   let orders: LaundryOrder[] = [];
   let sequence = 0;
   if (options.file && existsSync(options.file)) {
@@ -65,10 +71,13 @@ export function createApiServer(options: ServerOptions = {}): Server {
     writeFileSync(options.file, JSON.stringify(orders, null, 2));
   };
   const send = (res: ServerResponse, status: number, body: unknown) => {
+    const message = (body as { message?: unknown } | null)?.message;
+    if (status >= 400 && typeof message === 'string') trace.set(res, { ...trace.get(res), message });
     res.writeHead(status, {
       'Content-Type': 'application/json; charset=utf-8',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-User-Id, X-User-Role, X-Simulate-Failure',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-User-Id, X-User-Role, X-Simulate-Failure, X-Request-Id',
+      'Access-Control-Expose-Headers': 'X-Request-Id',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
     });
     res.end(status === 204 ? undefined : JSON.stringify(body));
@@ -108,6 +117,21 @@ export function createApiServer(options: ServerOptions = {}): Server {
   }
 
   return createServer(async (req, res) => {
+    // X-Request-Id from the app links this line to the entry on the phone's Log screen.
+    const sent = String(req.headers['x-request-id'] ?? '');
+    const reqId = /^[\w-]{1,40}$/.test(sent) ? sent : randomBytes(4).toString('hex');
+    res.setHeader('X-Request-Id', reqId);
+    const started = process.hrtime.bigint();
+    res.on('finish', () => {
+      const facts = trace.get(res) ?? {};
+      const path = (req.url ?? '/').split('?')[0];
+      if (req.method === 'OPTIONS' || path === '/api/health') return;
+      const status = res.statusCode;
+      log.log(status >= 500 ? 'error' : status >= 400 ? 'warn' : 'info', `${req.method} ${path} ${status}`, {
+        reqId, method: req.method, path, status, ms: Number((process.hrtime.bigint() - started) / 1000n) / 1000,
+        userId: facts.userId, error: facts.message, stack: facts.error instanceof Error ? facts.error.stack : undefined,
+      });
+    });
     try {
       const url = new URL(req.url ?? '/', 'http://localhost');
       if (req.method === 'OPTIONS') return send(res, 204, null);
@@ -118,7 +142,11 @@ export function createApiServer(options: ServerOptions = {}): Server {
         if (url.pathname === '/api/auth/login' && req.method === 'POST') {
           const input = await readJson(req);
           const account = accounts.find((entry) => entry.user.email === normalizeEmail(String(input.email ?? '')));
-          if (!account || !verifyPassword(String(input.password ?? ''), account)) return send(res, 401, { message: 'Email atau kata sandi tidak sesuai.' });
+          if (!account || !verifyPassword(String(input.password ?? ''), account)) {
+            log.log('warn', 'Login gagal', { reqId, email: normalizeEmail(String(input.email ?? '')), knownEmail: !!account });
+            return send(res, 401, { message: 'Email atau kata sandi tidak sesuai.' });
+          }
+          trace.set(res, { ...trace.get(res), userId: account.user.id });
           return send(res, 200, session(account));
         }
         if (url.pathname === '/api/auth/register' && req.method === 'POST') {
@@ -134,6 +162,8 @@ export function createApiServer(options: ServerOptions = {}): Server {
           const account: StoredAccount = { user: created.user, ...hashPassword(created.password) };
           accounts = [...accounts, account];
           saveAccounts();
+          trace.set(res, { ...trace.get(res), userId: account.user.id });
+          log.log('info', 'Akun baru terdaftar', { reqId, userId: account.user.id });
           return send(res, 201, session(account));
         }
         if (url.pathname === '/api/auth/me' && req.method === 'GET') {
@@ -148,6 +178,7 @@ export function createApiServer(options: ServerOptions = {}): Server {
       const identity = identify(req);
       if (!identity) return send(res, 401, { message: 'Sesi tidak valid atau sudah berakhir. Silakan masuk kembali.' });
       const userId = identity.user.id;
+      trace.set(res, { ...trace.get(res), userId });
       const isAdmin = identity.user.role === 'admin';
       const [, id, statusPath] = match;
 
@@ -207,6 +238,7 @@ export function createApiServer(options: ServerOptions = {}): Server {
       return send(res, 200, { order: updated });
     } catch (error) {
       const known = error instanceof Error && /JSON|Berat|kuota|Foto/.test(error.message);
+      if (!known) trace.set(res, { ...trace.get(res), error });
       send(res, known ? (/JSON/.test((error as Error).message) ? 400 : 422) : 500, { message: known ? (error as Error).message : 'Terjadi kesalahan pada server.' });
     }
   });
