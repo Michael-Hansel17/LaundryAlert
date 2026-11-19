@@ -7,6 +7,7 @@ import { clearSessionToken, loadSessionToken, setSessionExpiredHandler, setSessi
 import { ApiError } from '../../features/laundry/data/orderDto';
 import { DemoStore } from '../../features/laundry/data/demoStore';
 import { Button } from '../components/Button';
+import { logger } from '../services/logger';
 import { ui } from '../theme/theme';
 
 const DemoContext = createContext<DemoStore | null>(null);
@@ -22,7 +23,11 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     let active = true;
     setError(null);
     opening.current ??= DemoStore.open(AsyncStorage);
-    opening.current.then((loaded) => { if (active) setStore(loaded); }, (reason: unknown) => {
+    opening.current.then((loaded) => {
+      logger.info('storage', 'Data lokal dimuat', { orders: loaded.getSnapshot().orders.length });
+      if (active) setStore(loaded);
+    }, (reason: unknown) => {
+      logger.error('storage', 'Data lokal gagal dibuka', { error: reason });
       if (active) setError(reason instanceof Error ? reason.message : 'Penyimpanan lokal tidak dapat dibuka.');
     });
     return () => { active = false; };
@@ -30,7 +35,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   // A rejected token (expired / revoked) signs the user out instead of leaving a dead session.
   useEffect(() => {
     if (!store) return;
-    setSessionExpiredHandler(() => { void clearSessionToken(); store.logout(); });
+    setSessionExpiredHandler(() => { logger.warn('auth', 'Sesi kedaluwarsa atau ditolak server, keluar otomatis'); void clearSessionToken(); store.logout(); });
     return () => setSessionExpiredHandler(null);
   }, [store]);
   // Keep the user signed in after a restart: validate the stored token with the backend.
@@ -45,7 +50,9 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         if (!active) return;
         setSessionToken(token);
         store.signInRemote(user);
+        logger.info('auth', 'Sesi dipulihkan', { userId: user.id, role: user.role });
       } catch (reason) {
+        logger.warn('auth', 'Sesi tersimpan tidak dapat dipulihkan', { error: reason instanceof Error ? reason.message : String(reason) });
         if (reason instanceof ApiError && reason.status === 401) await clearSessionToken(); // expired: sign in again
       } finally { if (active) setRestoring(false); }
     })();

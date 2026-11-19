@@ -8,7 +8,8 @@ import { LaundryDetailScreen } from '../features/laundry/presentation/LaundryDet
 import { SubmitLaundryScreen } from '../features/laundry/presentation/SubmitLaundryScreen';
 import { ResidentSyncProvider } from '../features/laundry/state/ResidentSync';
 import { theme } from '../shared/theme/theme';
-import { LogoutButton } from './LogoutButton';
+import { DiagnosticsScreen } from '../shared/presentation/DiagnosticsScreen';
+import { HeaderActions } from './HeaderActions';
 import type { ResidentStackParams, ResidentTabParams } from './types';
 
 const Stack = createNativeStackNavigator<ResidentStackParams>();
@@ -17,7 +18,7 @@ const Tabs = createBottomTabNavigator<ResidentTabParams>();
 function ResidentTabs() {
   const insets = useSafeAreaInsets();
   return <Tabs.Navigator screenOptions={({ route }) => ({
-    headerRight: () => <LogoutButton />,
+    headerRight: () => <HeaderActions />,
     tabBarActiveTintColor: theme.colors.primary,
     tabBarInactiveTintColor: theme.colors.muted,
     tabBarLabelStyle: { fontSize: theme.fontSize.caption, lineHeight: 18, flexShrink: 0 },
@@ -34,5 +35,6 @@ export function ResidentNavigator() {
     <Stack.Screen name="ResidentTabs" component={ResidentTabs} options={{ headerShown: false }} />
     <Stack.Screen name="SubmitLaundry" component={SubmitLaundryScreen} options={{ title: 'Pengajuan laundry' }} />
     <Stack.Screen name="LaundryDetail" component={LaundryDetailScreen} options={{ title: 'Detail laundry' }} />
+    <Stack.Screen name="Diagnostics" component={DiagnosticsScreen} options={{ title: 'Log diagnostik' }} />
   </Stack.Navigator></ResidentSyncProvider>;
 }

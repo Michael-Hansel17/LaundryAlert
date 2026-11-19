@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { logger } from './logger';
 
 export type NotifyPermission = 'granted' | 'denied' | 'undetermined' | 'unsupported';
 export interface Notifier {
@@ -29,7 +30,27 @@ async function native() {
   return Notifications;
 }
 
-export function createNotifier(): Notifier {
+// Logs permission results and delivery failures without changing the notifier's behaviour.
+function traced(inner: Notifier): Notifier {
+  return {
+    getPermission: inner.getPermission,
+    requestPermission: async () => {
+      const result = await inner.requestPermission();
+      logger.info('notifikasi', `Izin notifikasi: ${result}`);
+      return result;
+    },
+    notify: async (title, body) => {
+      const sent = await inner.notify(title, body);
+      if (sent) logger.info('notifikasi', 'Notifikasi dikirim', { title });
+      else logger.warn('notifikasi', 'Notifikasi tidak terkirim (izin belum diberikan atau tidak didukung)', { title });
+      return sent;
+    },
+  };
+}
+
+export function createNotifier(): Notifier { return traced(createPlatformNotifier()); }
+
+function createPlatformNotifier(): Notifier {
   if (Platform.OS === 'web') return {
     getPermission: async () => { const api = webApi(); return api ? fromWeb(api.permission) : 'unsupported'; },
     requestPermission: async () => {
@@ -51,7 +72,7 @@ export function createNotifier(): Notifier {
         const Notifications = await native();
         await Notifications.scheduleNotificationAsync({ content: { title, body }, trigger: null });
         return true;
-      } catch { return false; }
+      } catch (error) { logger.error('notifikasi', 'Gagal menjadwalkan notifikasi', { error }); return false; }
     },
   };
 }

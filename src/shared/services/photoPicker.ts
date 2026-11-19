@@ -1,4 +1,5 @@
 import type * as ImagePicker from 'expo-image-picker';
+import { logger } from './logger';
 import { MAX_PHOTO_CHARS } from '../../features/laundry/data/localLaundryStorage';
 
 export type PhotoResult =
@@ -28,16 +29,23 @@ export function toPhotoResult(result: ImagePicker.ImagePickerResult): PhotoResul
 export function createPhotoPicker(injected?: PickerModule): PhotoPicker {
   // Loaded on first use so the native module is not touched at startup (or in plain Node tests).
   const load = async (): Promise<PickerModule> => injected ?? await import('expo-image-picker');
-  const guard = async (run: () => Promise<PhotoResult>): Promise<PhotoResult> => {
-    try { return await run(); } catch { return { status: 'error', message: 'Kamera atau galeri tidak tersedia di perangkat ini.' }; }
+  const guard = async (source: string, run: () => Promise<PhotoResult>): Promise<PhotoResult> => {
+    let result: PhotoResult;
+    try { result = await run(); } catch (error) {
+      logger.error('foto', `${source} gagal dibuka`, { error });
+      return { status: 'error', message: 'Kamera atau galeri tidak tersedia di perangkat ini.' };
+    }
+    if (result.status === 'ok') logger.info('foto', `Foto dari ${source} dipilih`, { chars: result.uri.length });
+    else if (result.status !== 'cancelled') logger.warn('foto', `${source}: ${result.status}`, result.status === 'error' ? { message: result.message } : undefined);
+    return result;
   };
   return {
-    takePhoto: () => guard(async () => {
+    takePhoto: () => guard('kamera', async () => {
       const picker = await load();
       const permission = await picker.requestCameraPermissionsAsync();
       if (!permission.granted) return { status: 'denied', canAskAgain: permission.canAskAgain };
       return toPhotoResult(await picker.launchCameraAsync(options));
     }),
-    pickFromLibrary: () => guard(async () => toPhotoResult(await (await load()).launchImageLibraryAsync(options))),
+    pickFromLibrary: () => guard('galeri', async () => toPhotoResult(await (await load()).launchImageLibraryAsync(options))),
   };
 }
