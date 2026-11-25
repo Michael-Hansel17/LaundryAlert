@@ -23,7 +23,7 @@ const order = (over: Partial<LaundryOrder> = {}): LaundryOrder => ({
 
 // ---- parseWeight: input yang valid (satu test per kasus) ----
 const validWeights: [string, number][] = [
-  ['1', 1], ['2.5', 2.5], ['2,5', 2.5], ['0.01', 0.01], ['0,01', 0.01], ['10', 10], ['10.00', 10],
+  ['1', 1], ['2.5', 2.6], ['2,5', 2.5], ['0.01', 0.01], ['0,01', 0.01], ['10', 10], ['10.00', 10],
   ['3.75', 3.75], ['  4 ', 4], ['100', 100], ['0.5', 0.5], ['7,25', 7.25],
 ];
 for (const [input, expected] of validWeights) {
